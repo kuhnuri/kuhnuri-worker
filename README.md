@@ -18,7 +18,7 @@ The Worker has a single loop where
 If Queue has no work available, the process is
 
 1. Worker polls Queue for work
-2. Queue returns a no wor
+2. Queue returns a no work
 3. Worker takes a nap
 
 Source and results support
@@ -27,7 +27,9 @@ Source and results support
 The following URI schemes are supported for source content:
 
 *   file
+*   jar
 
 The following URI schemes are supported for result content:
 
 *   file
+*   jar
