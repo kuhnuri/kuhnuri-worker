@@ -44,6 +44,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   private val requestUrl = s"${queueBaseUrl}api/v1/work"
   private val submitUrl = s"${queueBaseUrl}api/v1/work"
 
+  private val workerId = configuration.getString("worker.id").get
   private val workerBaseUrl = new URI(configuration.getString("worker.url").get)
 
   protected val transtypes = readTranstypes
@@ -51,9 +52,9 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   TokenAuthorizationFilter.authToken = register()
   logger.info(s"Token: ${TokenAuthorizationFilter.authToken}")
 
-  // FIXME add user/password
+  // FIXME add password
   private def register(): Option[String] = {
-    val register = Register(workerBaseUrl)
+    val register = Register(workerId, workerBaseUrl)
     logger.info(s"Register to queue: $register")
     val request = ws.url(registerUrl)
       .withRequestTimeout(10000.millis)
