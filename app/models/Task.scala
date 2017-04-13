@@ -4,7 +4,7 @@ import java.net.URI
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import controllers.v1.WorkerController.jobWrites
+import models.Job.jobWrites
 
 sealed case class Task(input: URI, output: URI, job: Job)
 

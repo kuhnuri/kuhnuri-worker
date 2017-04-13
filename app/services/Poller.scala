@@ -3,7 +3,6 @@ package services
 import java.net.URI
 import javax.inject.Inject
 
-import controllers.v1.WorkerController._
 import filters.TokenAuthorizationFilter
 import filters.TokenAuthorizationFilter._
 import models.Register._

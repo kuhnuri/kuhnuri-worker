@@ -1,10 +1,16 @@
 package services
 
+import java.io.{File, IOException}
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.StandardOpenOption.CREATE
+import java.nio.file.{Files, Paths}
 import javax.inject.{Inject, Singleton}
 
-import models.{ConversionStatus, Task}
-import play.api.Logger
+import models.Job._
+import models.{ConversionStatus, Job, Task}
 import play.api.inject.ApplicationLifecycle
+import play.api.libs.json.Json
+import play.api.{Configuration, Logger}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
@@ -23,11 +29,13 @@ trait WorkerService {
 }
 
 @Singleton
-class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
+class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configuration: Configuration,
                                     worker: Worker, poller: Poller,
                                     appLifecycle: ApplicationLifecycle) extends WorkerService {
 
   private val logger = Logger(this.getClass)
+  private val baseTemp = new File(configuration.getString("worker.temp").get)
+  private val stateFile = baseTemp.toPath.resolve(Paths.get("state.json"))
 
   /** Promise of application shutdown. */
   var shutdownPromise: Option[Promise[Unit]] = None
@@ -84,9 +92,11 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
       val f: Future[Try[Task]] = for {
       //        _ <- lock()
         response <- poller.getWork()
-        res <- worker.process(response)
+        ser <- persist(response)
+        res <- worker.process(ser)
         submitRes <- poller.submitResults(res)
-      } yield submitRes
+        clean <- cleanJob(submitRes)
+      } yield clean
       f.onComplete {
         //        case Failure(t: NoSuchElementException) => ()
         case Failure(t) => t.printStackTrace(); logger.error(s"Failure in run: ${t.getMessage}", t)
@@ -95,6 +105,37 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
       }
       // FIXME pass results out
       f.map(t => ())
+    }
+  }
+
+  def cleanJob(submitRes: Try[Task]): Future[Try[Task]] = Future {
+    logger.debug("Deleting " + stateFile)
+    try {
+      Files.delete(stateFile)
+    } catch {
+      case e: IOException => logger.error("Failed to delete persisted job state", e)
+    }
+    submitRes
+  }
+
+  private def persist(src: Try[Job]): Future[Try[Job]] = Future {
+    src match {
+      case Success(job) => {
+        logger.debug("Writing " + stateFile)
+        val out = Files.newBufferedWriter(stateFile, UTF_8, CREATE)
+        try {
+          out.write(Json.toJson(job).toString())
+          src
+        } catch {
+          case e: IOException => {
+            logger.error("Failed to persist job state", e)
+            Failure(e)
+          }
+        } finally {
+          out.close()
+        }
+      }
+      case f => f
     }
   }
 
