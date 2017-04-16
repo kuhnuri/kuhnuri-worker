@@ -45,12 +45,6 @@ stage := {
   log.info("Installing plugins...")
 
   log.info("Run integrator")
-  IO.copy(List(
-    (ditaOtDir / s"dita-ot-$ditaOtVersion" /"resources" / "messages.xml", stageDir / "conf" / "messages.xml"),
-    (ditaOtDir / s"dita-ot-$ditaOtVersion" /"resources" / "plugins.xml", stageDir / "conf" / "plugins.xml"),
-    (ditaOtDir / s"dita-ot-$ditaOtVersion" /"lib" / "configuration.properties", stageDir / "conf" / "configuration.properties"),
-    (ditaOtDir / s"dita-ot-$ditaOtVersion" /"lib" / "org.dita.dost.platform" / "plugin.properties", stageDir / "conf" / "org.dita.dost.platform" / "plugin.properties")
-  ))
   val adaptee = new Integrator(stageDir)
   adaptee.setLogger(new DITAOTLogger {
     override def info(msg: String): Unit = log.info(msg)
@@ -60,6 +54,12 @@ stage := {
     override def debug(msg: String): Unit = log.debug(msg)
   })
   adaptee.execute()
+  IO.copy(List(
+    (stageDir / "lib" / "org.dita.dost.platform" / "plugin.properties", stageDir / "conf" / "org.dita.dost.platform" / "plugin.properties"),
+    (stageDir / "lib" / "configuration.properties", stageDir / "conf" / "configuration.properties"),
+    (stageDir / "resources" / "messages.xml", stageDir / "conf" / "messages.xml"),
+    (stageDir / "resources" / "plugins.xml", stageDir / "conf" / "plugins.xml")
+  ))
 
   log.debug("Rewrite launch scripts")
   val cmdFile = stageDir / "bin" / "com-elovirta-kuhnuri-worker"
