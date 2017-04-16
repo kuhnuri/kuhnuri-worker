@@ -109,11 +109,13 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
   }
 
   def cleanJob(submitRes: Try[Task]): Future[Try[Task]] = Future {
-    logger.debug("Deleting " + stateFile)
-    try {
-      Files.delete(stateFile)
-    } catch {
-      case e: IOException => logger.error("Failed to delete persisted job state", e)
+    if (Files.exists(stateFile)) {
+      logger.debug("Deleting " + stateFile)
+      try {
+        Files.delete(stateFile)
+      } catch {
+        case e: IOException => logger.error("Failed to delete persisted job state", e)
+      }
     }
     submitRes
   }
