@@ -18,7 +18,7 @@ libraryDependencies += ws
 libraryDependencies += filters
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test
 libraryDependencies += "org.apache.ant" % "ant" % "1.9.7"
-libraryDependencies += "org.dita-ot" % "dost" % "2.4.3"
+libraryDependencies += "org.dita-ot" % "dost" % "2.5.0"
 
 stage := {
   import java.nio.file._
@@ -26,7 +26,7 @@ stage := {
   val log = streams.value.log
 
   val stageDir = stage.value
-  val ditaOtVersion = System.getProperty("dita-ot.version")
+  val ditaOtVersion = System.getProperty("dita-ot.version", "2.5.0")
   log.info(s"DITA-OT version: $ditaOtVersion")
 
   val ditaOtDir = baseDirectory.value / "target" / "universal" / "tmp" / "dita-ot"
