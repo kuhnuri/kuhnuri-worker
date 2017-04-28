@@ -1,11 +1,13 @@
 package models
 
+import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
+
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 sealed case class Job(id: String, input: String, output: String, transtype: String,
                       params: Map[String, String],
-                      status: StatusString) {
+                      status: StatusString, created: LocalDateTime, processing: Option[LocalDateTime], finished: Option[LocalDateTime]) {
   //  def toJobStatus(status: StatusString): JobStatus = {
   //    JobStatus(id, output, status)
   //  }
@@ -14,13 +16,27 @@ object Job {
 
   import models.StatusString.{jobStatusStringReads, jobStatusStringWrites}
 
+  implicit val localDateTimeWrites =
+    Writes[LocalDateTime](s => JsString(s.atOffset(ZoneOffset.UTC).toString))
+
+
+  implicit val localDateTimeReads =
+    Reads[LocalDateTime](j => try {
+      JsSuccess(ZonedDateTime.parse(j.as[JsString].value).toLocalDateTime)
+    } catch {
+      case e: IllegalArgumentException => JsError(e.toString)
+    })
+
   implicit val jobWrites: Writes[Job] = (
     (JsPath \ "id").write[String] and
       (JsPath \ "input").write[String] and
       (JsPath \ "output").write[String] and
       (JsPath \ "transtype").write[String] and
       (JsPath \ "params").write[Map[String, String]] and
-      (JsPath \ "status").write[StatusString]
+      (JsPath \ "status").write[StatusString] and
+      (JsPath \ "created").write[LocalDateTime] and
+      (JsPath \ "processing").writeNullable[LocalDateTime] and
+      (JsPath \ "finished").writeNullable[LocalDateTime]
     ) (unlift(Job.unapply _))
   implicit val jobReads: Reads[Job] = (
     (JsPath \ "id").read[String] and
@@ -30,7 +46,10 @@ object Job {
       }.getOrElse(true))*/ and
       (JsPath \ "transtype").read[String] and
       (JsPath \ "params").read[Map[String, String]] and
-      (JsPath \ "status").read[StatusString]
+      (JsPath \ "status").read[StatusString] and
+      (JsPath \ "created").read[LocalDateTime] and
+      (JsPath \ "processing").readNullable[LocalDateTime] and
+      (JsPath \ "finished").readNullable[LocalDateTime]
     ) (Job.apply _)
 }
 

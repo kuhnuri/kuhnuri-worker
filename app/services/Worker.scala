@@ -115,9 +115,10 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
           val end = System.currentTimeMillis()
           logger.info(s"Process took ${format(end - start)}")
 //          logger.debug(s"Stopped DITA-OT")
-          Success(task)
+          Success(task.copy(job = task.job.copy(status = StatusString.Done)))
         } catch {
-          case e: Throwable => e.printStackTrace(); Failure(new ProcessorException(e, task.job))
+          case e: Throwable => e.printStackTrace();
+            Failure(new ProcessorException(e, task.job.copy(status = StatusString.Error)))
         }
       }
       case f => f
