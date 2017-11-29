@@ -1,6 +1,3 @@
-import org.apache.tools.ant.BuildException
-import org.dita.dost.log.DITAOTAntLogger
-import org.dita.dost.log.DITAOTLogger
 import org.dita.dost.platform.Integrator
 
 name := """com.elovirta.kuhnuri.worker"""
@@ -11,54 +8,47 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.8"
 
-resolvers += Resolver.mavenLocal
+//resolvers += Resolver.mavenLocal
 
 libraryDependencies += cache
 libraryDependencies += ws
 libraryDependencies += filters
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test
-libraryDependencies += "org.apache.ant" % "ant" % "1.9.7"
-libraryDependencies += "org.dita-ot" % "dost" % "2.5.0"
+libraryDependencies += "org.apache.ant" % "ant" % "1.10.1"
+libraryDependencies += "org.dita-ot" % "dost" % "3.0"
 
 stage := {
   import java.nio.file._
-  import org.dita.dost.util.Constants
   val log = streams.value.log
 
   val stageDir = stage.value
-  val ditaOtVersion = System.getProperty("dita-ot.version", "2.5.0")
+  val ditaOtVersion = System.getProperty("dita-ot.version", "3.0")
   log.info(s"DITA-OT version: $ditaOtVersion")
 
   val ditaOtDir = baseDirectory.value / "target" / "universal" / "tmp" / "dita-ot"
   if (Files.notExists(ditaOtDir.toPath)) {
     log.info("Downloading...")
-    IO.unzipURL(new URL(s"https://github.com/dita-ot/dita-ot/releases/download/$ditaOtVersion/dita-ot-$ditaOtVersion.zip"), ditaOtDir)
+    IO.unzipURL(new URL(s"http://localhost:2015/dita-ot-$ditaOtVersion.zip"), ditaOtDir)
     IO.copy(List("build_template.xml", "catalog-dita_template.xml", "integrator.xml")
       .map(name => (new File(new File(ditaOtDir, s"dita-ot-$ditaOtVersion"), name), new File(stageDir, name)))
     )
-    List("lib", "plugins", "resources", "xsl")
-     .foreach { name => IO.copyDirectory(new File(new File(ditaOtDir, s"dita-ot-$ditaOtVersion"), name), new File(stageDir, name)) }
+    List("lib", "plugins", "config", "xsl")
+      .foreach { name => IO.copyDirectory(new File(new File(ditaOtDir, s"dita-ot-$ditaOtVersion"), name), new File(stageDir, name)) }
   } else {
     log.debug("Path exists, no need to download.")
   }
 
   log.info("Installing plugins...")
 
-  log.info("Run integrator")
+  log.info("Run integrator " + stageDir)
   val adaptee = new Integrator(stageDir)
-  adaptee.setLogger(new DITAOTLogger {
-    override def info(msg: String): Unit = log.info(msg)
-    override def warn(msg: String): Unit = log.warn(msg)
-    override def error(msg: String): Unit = log.error(msg)
-    override def error(msg: String, err: Throwable): Unit = {log.error(msg + ": " + err); err.printStackTrace()}
-    override def debug(msg: String): Unit = log.debug(msg)
-  })
+  adaptee.setLogger(new SbtLogger(log))
   adaptee.execute()
   IO.copy(List(
-    (stageDir / "lib" / "org.dita.dost.platform" / "plugin.properties", stageDir / "conf" / "org.dita.dost.platform" / "plugin.properties"),
-    (stageDir / "lib" / "configuration.properties", stageDir / "conf" / "configuration.properties"),
-    (stageDir / "resources" / "messages.xml", stageDir / "conf" / "messages.xml"),
-    (stageDir / "resources" / "plugins.xml", stageDir / "conf" / "plugins.xml")
+    (stageDir / "config" / "org.dita.dost.platform" / "plugin.properties", stageDir / "conf" / "org.dita.dost.platform" / "plugin.properties"),
+    (stageDir / "config" / "configuration.properties", stageDir / "conf" / "configuration.properties"),
+    (stageDir / "config" / "plugins.xml", stageDir / "conf" / "plugins.xml"),
+    (stageDir / "config" / "messages.xml", stageDir / "conf" / "messages.xml")
   ))
 
   log.debug("Rewrite launch scripts")
@@ -69,7 +59,7 @@ stage := {
         "declare -x -r DITA_HOME=\"$(realpath \"${app_home}/../\")\"",
         "unset CLASSPATH",
         "declare -x CLASSPATH",
-        "source \"$lib_dir/../resources/env.sh\"",
+        "source \"$lib_dir/../config/env.sh\"",
         line.replace("app_classpath=\"", "app_classpath=\"$CLASSPATH:")
       )
     } else {
@@ -84,7 +74,7 @@ stage := {
       List(
         "set \"DITA_HOME=%COM_ELOVIRTA_KUHNURI_WORKER_HOME%\"",
         "set \"CLASSPATH=\"",
-        "call \"%APP_LIB_DIR%\\..\\resources\\env.bat\"",
+        "call \"%APP_LIB_DIR%\\..\\config\\env.bat\"",
         line.replace("APP_CLASSPATH=", "APP_CLASSPATH=%CLASSPATH%;")
       )
     } else {

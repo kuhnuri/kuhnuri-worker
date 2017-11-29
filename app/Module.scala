@@ -5,7 +5,7 @@ class Module extends AbstractModule {
 
   override def configure() = {
     bind(classOf[Worker]).to(classOf[SimpleWorker])
-    bind(classOf[Poller]).to(classOf[RestPoller])
+    bind(classOf[Poller]).to(classOf[RestPoller]).asEagerSingleton()
     bind(classOf[WorkerService]).to(classOf[SimpleWorkerService]).asEagerSingleton()
   }
 

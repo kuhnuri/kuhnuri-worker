@@ -19,4 +19,4 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.1")
 
 //addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.6")
 
-libraryDependencies += "org.dita-ot" % "dost" % "2.5.0"
+libraryDependencies += "org.dita-ot" % "dost" % "3.0"

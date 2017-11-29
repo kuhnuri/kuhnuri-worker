@@ -48,6 +48,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
 
   protected val transtypes = readTranstypes
   protected var currentStatus: ConversionStatus = Busy()
+  // FIXME What to do here, wait in loop until we can register?
   TokenAuthorizationFilter.authToken = register()
   logger.info(s"Token: ${TokenAuthorizationFilter.authToken}")
 
@@ -58,11 +59,15 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
     val request = ws.url(registerUrl)
       .withRequestTimeout(10000.millis)
       .post(Json.toJson(register))
-    val response = Await.result(request, 10000.millis)
-    response.status match {
-      case OK => response.header(AUTH_TOKEN_HEADER)
-      case UNAUTHORIZED => throw new IllegalArgumentException(s"Unauthorized, login: ${response.status}")
-      case code => throw new IllegalArgumentException(s"Unsupported response $code, login: ${response.status}")
+    try {
+      val response = Await.result(request, 10000.millis)
+      response.status match {
+        case OK => response.header(AUTH_TOKEN_HEADER)
+        case UNAUTHORIZED => throw new IllegalArgumentException(s"Unauthorized, login: ${response.status}")
+        case code => throw new IllegalArgumentException(s"Unsupported response $code, login: ${response.status}")
+      }
+    } catch {
+      case e => throw new IllegalStateException("Unable to register: " + e.getMessage, e)
     }
   }
 
