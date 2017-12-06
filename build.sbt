@@ -89,6 +89,8 @@ stage := {
 dist := {
   val stageDir = stage.value
   val distFile = baseDirectory.value / "target" / "universal" / s"${name.value.replace('.', '-')}-${version.value}.zip"
-  IO.zip(Path.allSubpaths(stageDir), distFile)
+  val entries: Traversable[(File, String)] = Path.allSubpaths(stageDir)
+    .map((e) => (e._1, s"${name.value.replace('.', '-')}-${version.value}/${e._2}"))
+  IO.zip(entries, distFile)
   distFile
 }
