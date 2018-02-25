@@ -1,6 +1,7 @@
 version: '3'
 services:
   worker:
+    image: "jelovirt/kuhnuri_worker:latest"
     build: .
     ports:
       - 9002:9000
