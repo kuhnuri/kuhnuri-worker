@@ -10,11 +10,12 @@ scalaVersion := "2.11.8"
 
 //resolvers += Resolver.mavenLocal
 
-libraryDependencies += cache
+libraryDependencies += ehcache
 libraryDependencies += ws
 libraryDependencies += filters
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "1.5.1" % Test
-libraryDependencies += "org.apache.ant" % "ant" % "1.10.1"
+libraryDependencies += guice
+libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test"
+libraryDependencies += "org.apache.ant" % "ant" % "1.10.2"
 libraryDependencies += "org.dita-ot" % "dost" % "3.0"
 
 stage := {
@@ -22,13 +23,13 @@ stage := {
   val log = streams.value.log
 
   val stageDir = stage.value
-  val ditaOtVersion = System.getProperty("dita-ot.version", "3.0")
+  val ditaOtVersion = System.getProperty("dita-ot.version", "3.0.2")
   log.info(s"DITA-OT version: $ditaOtVersion")
 
   val ditaOtDir = baseDirectory.value / "target" / "universal" / "tmp" / "dita-ot"
   if (Files.notExists(ditaOtDir.toPath)) {
     log.info("Downloading...")
-    IO.unzipURL(new URL(s"http://localhost:2015/dita-ot-$ditaOtVersion.zip"), ditaOtDir)
+    IO.unzipURL(new URL(s"https://github.com/dita-ot/dita-ot/releases/download/$ditaOtVersion/dita-ot-$ditaOtVersion.zip"), ditaOtDir)
     IO.copy(List("build_template.xml", "catalog-dita_template.xml", "integrator.xml")
       .map(name => (new File(new File(ditaOtDir, s"dita-ot-$ditaOtVersion"), name), new File(stageDir, name)))
     )

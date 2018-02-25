@@ -36,15 +36,15 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
 
   private val logger = Logger(this.getClass)
 
-  private val queueBaseUrl = configuration.getString("queue.url").get
-  private val idleDuration = configuration.getMilliseconds("worker.idle").get
+  private val queueBaseUrl = configuration.get[String]("queue.url")
+  private val idleDuration = configuration.getMillis("worker.idle")
   private val registerUrl = s"${queueBaseUrl}api/v1/login"
   private val unregisterUrl = s"${queueBaseUrl}api/v1/logout"
   private val requestUrl = s"${queueBaseUrl}api/v1/work"
   private val submitUrl = s"${queueBaseUrl}api/v1/work"
 
-  private val workerId = configuration.getString("worker.id").get
-  private val workerBaseUrl = new URI(configuration.getString("worker.url").get)
+  private val workerId = configuration.get[String]("worker.id")
+  private val workerBaseUrl = new URI(configuration.get[String]("worker.url"))
 
   protected val transtypes = readTranstypes
   protected var currentStatus: ConversionStatus = Busy()
@@ -67,14 +67,14 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
         case code => throw new IllegalArgumentException(s"Unsupported response $code, login: ${response.status}")
       }
     } catch {
-      case e => throw new IllegalStateException("Unable to register: " + e.getMessage, e)
+      case e: Throwable => throw new IllegalStateException("Unable to register: " + e.getMessage, e)
     }
   }
 
   override def unregister(): Future[Unit] = {
     logger.info(s"unregister: ${TokenAuthorizationFilter.authToken}")
     ws.url(unregisterUrl)
-      .withHeaders(AUTH_TOKEN_HEADER -> authToken.get)
+      .addHttpHeaders(AUTH_TOKEN_HEADER -> authToken.get)
       .withRequestTimeout(10000.millis)
       .post("")
       .map { response =>
@@ -90,8 +90,8 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
       }
   }
 
-  private def readTranstypes: List[String] = {
-    configuration.getStringList("worker.transtypes").get.toList
+  private def readTranstypes: Seq[String] = {
+    configuration.get[Seq[String]]("worker.transtypes")
   }
 
   //  override def run(): Future[Unit] = {
@@ -123,7 +123,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
     val request: WSRequest = ws.url(requestUrl)
     logger.debug(s"Get work ${request.uri}")
     val complexRequest: WSRequest = request
-      .withHeaders(
+      .addHttpHeaders(
         "Accept" -> "application/json",
         AUTH_TOKEN_HEADER -> authToken.get)
       .withRequestTimeout(10000.millis)
@@ -161,7 +161,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
 
         val request: WSRequest = ws.url(submitUrl)
         val complexRequest: WSRequest = request
-          .withHeaders(
+          .addHttpHeaders(
             AUTH_TOKEN_HEADER -> authToken.get)
           .withRequestTimeout(10000.millis)
         logger.debug(s"Submit ${otRes.job.id} results to queue")

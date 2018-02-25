@@ -11,7 +11,7 @@ import play.api.mvc._
 import services.{Worker, WorkerService}
 
 @Singleton
-class WorkerController @Inject()(workerService: WorkerService) extends Controller {
+class WorkerController @Inject()(workerService: WorkerService, cc: ControllerComponents) extends AbstractController(cc) {
 
   def status = Action {
     Ok(Json.toJson(workerService.status))

@@ -34,7 +34,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
 
   private val ditaDir = environment.rootPath()
   private val processorFactory = ProcessorFactory.newInstance(ditaDir)
-  private val baseTemp = new File(configuration.getString("worker.temp").get)
+  private val baseTemp = new File(configuration.get[String]("worker.temp"))
   processorFactory.setBaseTempDir(baseTemp)
 
   protected val cacheListener = new CacheListener()
