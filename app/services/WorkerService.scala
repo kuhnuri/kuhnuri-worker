@@ -36,6 +36,9 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
   private val logger = Logger(this.getClass)
   private val baseTemp = new File(configuration.getString("worker.temp").get)
   private val stateFile = baseTemp.toPath.resolve(Paths.get("state.json"))
+  if (!Files.exists(stateFile.getParent)) {
+    Files.createDirectories(stateFile.getParent);
+  }
 
   /** Promise of application shutdown. */
   var shutdownPromise: Option[Promise[Unit]] = None
