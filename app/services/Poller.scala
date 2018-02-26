@@ -55,7 +55,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   // FIXME add password
   private def register(): Option[String] = {
     val register = Register(workerId, workerBaseUrl)
-    logger.info(s"Register to queue: $register")
+    logger.info(s"Register to queue $registerUrl as $register")
     val request = ws.url(registerUrl)
       .withRequestTimeout(10000.millis)
       .post(Json.toJson(register))

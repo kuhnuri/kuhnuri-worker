@@ -6,12 +6,13 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
 sealed case class Job(id: String, input: String, output: String, transtype: String,
-                      params: Map[String, String],
-                      status: StatusString, created: LocalDateTime, processing: Option[LocalDateTime], finished: Option[LocalDateTime]) {
+                      params: Map[String, String], status: StatusString, priority: Int,
+                      created: LocalDateTime, processing: Option[LocalDateTime], finished: Option[LocalDateTime]) {
   //  def toJobStatus(status: StatusString): JobStatus = {
   //    JobStatus(id, output, status)
   //  }
 }
+
 object Job {
 
   import models.StatusString.{jobStatusStringReads, jobStatusStringWrites}
@@ -34,6 +35,7 @@ object Job {
       (JsPath \ "transtype").write[String] and
       (JsPath \ "params").write[Map[String, String]] and
       (JsPath \ "status").write[StatusString] and
+      (JsPath \ "priority").write[Int] and
       (JsPath \ "created").write[LocalDateTime] and
       (JsPath \ "processing").writeNullable[LocalDateTime] and
       (JsPath \ "finished").writeNullable[LocalDateTime]
@@ -47,24 +49,12 @@ object Job {
       (JsPath \ "transtype").read[String] and
       (JsPath \ "params").read[Map[String, String]] and
       (JsPath \ "status").read[StatusString] and
+      (JsPath \ "priority").read[Int] and
       (JsPath \ "created").read[LocalDateTime] and
       (JsPath \ "processing").readNullable[LocalDateTime] and
       (JsPath \ "finished").readNullable[LocalDateTime]
     ) (Job.apply _)
 }
-
-sealed case class JobResult(job: Job, log: Seq[String])
-
-object JobResult {
-  implicit val jobResultWrites: Writes[JobResult] = (
-    (JsPath \ "job").write[Job] and
-      (JsPath \ "log").write[Seq[String]]
-    ) (unlift(JobResult.unapply _))
-}
-
-sealed case class Update(id: String, status: Option[StatusString])
-
-//sealed case class JobStatus(id: String, output: Option[String], status: StatusString)
 
 sealed trait StatusString
 
@@ -103,14 +93,5 @@ object StatusString {
 
   implicit val jobStatusStringWrites: Writes[StatusString] =
     Writes[StatusString](s => JsString(s.toString))
-
-  //  implicit val createReads: Reads[Create] = (
-  //    (JsPath \ "input").read[String] /*.filter(new URI(_).isAbsolute)*/ and
-  //      (JsPath \ "output").readNullable[String] /*.filter(_.map {
-  //        new URI(_).isAbsolute
-  //      }.getOrElse(true))*/ and
-  //      (JsPath \ "transtype").read[String] and
-  //      (JsPath \ "params").read[Map[String, String]]
-  //    ) (Create.apply _)
 
 }
