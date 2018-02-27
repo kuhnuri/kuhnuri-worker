@@ -1,10 +1,10 @@
 package services
 
-import java.net.URI
-import javax.inject.Inject
+import java.net.{ConnectException, URI, UnknownHostException}
 
 import filters.TokenAuthorizationFilter
 import filters.TokenAuthorizationFilter._
+import javax.inject.Inject
 import models.Register._
 import models._
 import play.Environment
@@ -13,7 +13,6 @@ import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Configuration, Logger}
 
-import scala.collection.JavaConversions._
 import scala.collection.immutable.List
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -58,20 +57,29 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   // FIXME add password
   private def register(): Option[String] = {
     val register = Register(workerId, workerBaseUrl)
-    logger.info(s"Register to queue $registerUrl as $register")
-    val request = ws.url(registerUrl)
-      .withRequestTimeout(10000.millis)
-      .post(Json.toJson(register))
-    try {
-      val response = Await.result(request, 10000.millis)
-      response.status match {
-        case OK => response.header(AUTH_TOKEN_HEADER)
-        case UNAUTHORIZED => throw new IllegalArgumentException(s"Unauthorized, login: ${response.status}")
-        case code => throw new IllegalArgumentException(s"Unsupported response $code, login: ${response.status}")
+    while (true) {
+      logger.info(s"Register to queue $registerUrl as $register")
+      val request = ws.url(registerUrl)
+        .withRequestTimeout(10000.millis)
+        .post(Json.toJson(register))
+      try {
+        val response = Await.result(request, 10000.millis)
+        response.status match {
+          case OK => {
+            logger.info("Registration to queue done")
+            return response.header(AUTH_TOKEN_HEADER)
+          }
+          case UNAUTHORIZED => throw new IllegalArgumentException(s"Unauthorized, login: ${response.status}")
+          case code => throw new IllegalArgumentException(s"Unsupported response $code, login: ${response.status}")
+        }
+      } catch {
+        case e: UnknownHostException => logger.info("Queue not available, retry in 5 sec")//throw new IllegalStateException("Queue not available: " + e.getMessage, e)
+        case e: ConnectException => logger.info("Queue not available, retry in 5 sec")//throw new IllegalStateException("Queue not available: " + e.getMessage, e)
+        case e: Throwable => throw new IllegalStateException("Unable to register: " + e.getMessage, e)
       }
-    } catch {
-      case e: Throwable => throw new IllegalStateException("Unable to register: " + e.getMessage, e)
+      Thread.sleep(5 * 1000);
     }
+    None
   }
 
   override def unregister(): Future[Unit] = {
