@@ -12,6 +12,9 @@ import play.api.{Configuration, Logger}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+/**
+  * Performs a tranformation job.
+  */
 trait Worker {
   //  def add(job: String): Unit
 

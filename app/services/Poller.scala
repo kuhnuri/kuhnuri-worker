@@ -19,6 +19,9 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
+/**
+  * Polls a Queue for jobs and submits them back after processing.
+  */
 trait Poller {
 
   def status: ConversionStatus

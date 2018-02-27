@@ -1,21 +1,17 @@
 package services
 
-import java.io.{File, IOException}
-import java.nio.charset.StandardCharsets.UTF_8
-import java.nio.file.StandardOpenOption.CREATE
-import java.nio.file.{Files, Paths}
 import javax.inject.{Inject, Singleton}
-
-import models.Job._
-import models.{ConversionStatus, Job, Task}
+import models.{ConversionStatus, Task}
 import play.api.inject.ApplicationLifecycle
-import play.api.libs.json.Json
 import play.api.{Configuration, Logger}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success, Try}
 
+/**
+  * Service that runs workers in an infinite loop.
+  */
 trait WorkerService {
   //  def add(job: String): Unit
 
