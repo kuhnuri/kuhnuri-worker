@@ -30,15 +30,10 @@ trait WorkerService {
 
 @Singleton
 class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configuration: Configuration,
-                                    worker: Worker, poller: Poller,
+                                    worker: Worker, poller: Poller, stateService: StateService,
                                     appLifecycle: ApplicationLifecycle) extends WorkerService {
 
   private val logger = Logger(this.getClass)
-  private val baseTemp = new File(configuration.getString("worker.temp").get)
-  private val stateFile = baseTemp.toPath.resolve(Paths.get("state.json"))
-  if (!Files.exists(stateFile.getParent)) {
-    Files.createDirectories(stateFile.getParent);
-  }
 
   /** Promise of application shutdown. */
   var shutdownPromise: Option[Promise[Unit]] = None
@@ -95,10 +90,10 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
       val f: Future[Try[Task]] = for {
       //        _ <- lock()
         response <- poller.getWork()
-        ser <- persist(response)
+        ser <- stateService.persist(response)
         res <- worker.process(ser)
         submitRes <- poller.submitResults(res)
-        clean <- cleanJob(submitRes)
+        clean <- stateService.cleanJob(submitRes)
       } yield clean
       f.onComplete {
         //        case Failure(t: NoSuchElementException) => ()
@@ -108,39 +103,6 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
       }
       // FIXME pass results out
       f.map(t => ())
-    }
-  }
-
-  def cleanJob(submitRes: Try[Task]): Future[Try[Task]] = Future {
-    if (Files.exists(stateFile)) {
-      logger.debug("Deleting " + stateFile)
-      try {
-        Files.delete(stateFile)
-      } catch {
-        case e: IOException => logger.error("Failed to delete persisted job state", e)
-      }
-    }
-    submitRes
-  }
-
-  private def persist(src: Try[Job]): Future[Try[Job]] = Future {
-    src match {
-      case Success(job) => {
-        logger.debug("Writing " + stateFile)
-        val out = Files.newBufferedWriter(stateFile, UTF_8, CREATE)
-        try {
-          out.write(Json.toJson(job).toString())
-          src
-        } catch {
-          case e: IOException => {
-            logger.error("Failed to persist job state", e)
-            Failure(e)
-          }
-        } finally {
-          out.close()
-        }
-      }
-      case f => f
     }
   }
 
