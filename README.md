@@ -33,3 +33,24 @@ The following URI schemes are supported for result content:
 
 *   file
 *   jar
+
+Buiding
+-------
+
+Compile the code:
+
+1. ```sbt compile```
+
+Running
+-------
+
+Running a development version:
+
+1.  ```sbt run```
+
+Deploying
+---------
+
+Build a distribution package:
+
+1.  ```sbt dist```

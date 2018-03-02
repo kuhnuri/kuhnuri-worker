@@ -64,6 +64,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
   }
 
   private def loopTask(): Future[Unit] = {
+//    logger.info("loopTask")
     val f = run()
       .filter((u: Unit) => {
         logger.debug(s"Shutdown = ${shutdownPromise.isEmpty}")
@@ -79,6 +80,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
   }
 
   private def run(): Future[Unit] = {
+//    logger.info("run")
     if (shutdownPromise.isDefined) {
       logger.info("Shutdown requested, return immediately")
       Future(())
@@ -91,12 +93,29 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
         submitRes <- poller.submitResults(res)
         clean <- stateService.cleanJob(submitRes)
       } yield clean
-      f.onComplete {
-        //        case Failure(t: NoSuchElementException) => ()
-        case Failure(t) => t.printStackTrace(); logger.error(s"Failure in run: ${t.getMessage}", t)
+//      f.onSuccess {
+//        case Failure(t) => {
+//          t.printStackTrace()
+//          logger.error(s"Failure in run: ${t.getMessage}", t)
+//        }
+//        case _ => ()
+//      }
+      f.onFailure {
+        case t: Throwable => {
+          t.printStackTrace()
+          logger.error(s"Failure in run: ${t.getMessage}", t)
+        }
         case _ => ()
-        //        case _ => unlock()
       }
+//      f.onComplete {
+//        //        case Failure(t: NoSuchElementException) => ()
+//        case Failure(t) => {
+//          t.printStackTrace()
+//          logger.error(s"Failure in run: ${t.getMessage}", t)
+//        }
+//        case _ => ()
+//        //        case _ => unlock()
+//      }
       // FIXME pass results out
       f.map(t => ())
     }
