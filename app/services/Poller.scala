@@ -5,6 +5,8 @@ import java.net.{ConnectException, URI, UnknownHostException}
 import filters.TokenAuthorizationFilter
 import filters.TokenAuthorizationFilter._
 import javax.inject.Inject
+import javax.xml.XMLConstants
+import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
 import models.Register._
 import models._
 import play.Environment
@@ -14,6 +16,7 @@ import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Configuration, Logger}
 
 import scala.collection.immutable.List
+import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -121,7 +124,25 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   }
 
   private def readTranstypes: Seq[String] = {
-    configuration.get[Seq[String]]("worker.transtypes")
+    val available = mutable.Buffer[String]()
+    val reader = XMLInputFactory
+      .newInstance()
+      .createXMLStreamReader(getClass.getResourceAsStream("/plugins.xml"))
+    while (reader.hasNext) {
+      reader.next() match {
+        case XMLStreamConstants.START_ELEMENT if reader.getLocalName == "transtype" =>
+          available += reader.getAttributeValue(XMLConstants.NULL_NS_URI, "name")
+        case _ =>
+      }
+    }
+    val transtypes = configuration.get[Seq[String]]("worker.transtypes")
+    transtypes
+      .find(transtype => !available.contains(transtype))
+      .foreach(
+        transtype =>
+          throw new IllegalArgumentException(s"Configured transtype not available: ${transtype}")
+      )
+    transtypes
   }
 
   override def status: ConversionStatus = currentStatus
