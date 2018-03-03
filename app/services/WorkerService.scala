@@ -112,8 +112,13 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
 //        case _ => ()
 //      }
       f.onSuccess {
-        case Failure(UnavailableException(msg)) => {
-          logger.debug("Queue unavailable, wait: " + msg);
+        case Failure(UnavailableException(msg, cause)) => {
+          logger.debug("Queue unavailable, wait and retry: " + msg);
+          Thread.sleep(5000)
+          ()
+        }
+        case Failure(UnauthorizedException(msg)) => {
+          logger.error("Unauthorized, wait and retry: " + msg);
           Thread.sleep(5000)
           ()
         }

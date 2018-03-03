@@ -1,6 +1,7 @@
 package services
 
 import java.net.{ConnectException, URI, UnknownHostException}
+import java.util.concurrent.TimeoutException
 
 import filters.TokenAuthorizationFilter
 import filters.TokenAuthorizationFilter._
@@ -51,7 +52,9 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
   private val requestUrl    = s"${queueBaseUrl}api/v1/work"
   private val submitUrl     = s"${queueBaseUrl}api/v1/work"
 
-  private val workerId      = configuration.get[String]("worker.id")
+  //  private val workerId      = configuration.get[String]("worker.id")
+  private val queueUsername = configuration.get[String]("queue.username")
+  private val queuePassword = configuration.get[String]("queue.password")
   private val workerBaseUrl = new URI(configuration.get[String]("worker.url"))
 
   protected val transtypes                      = readTranstypes
@@ -64,7 +67,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
     if (authToken.isDefined) {
       Future(Success(authToken.get))
     } else {
-      val register = Register(workerId, workerBaseUrl)
+      val register = Register(queueUsername, queuePassword, workerBaseUrl)
       logger.info(s"Register to queue $registerUrl as $register")
       ws.url(registerUrl)
         .withRequestTimeout(10000.millis)
@@ -79,23 +82,21 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
                   TokenAuthorizationFilter.authToken = Option(token)
                   Success(token)
                 })
-                .getOrElse(
-                  Failure(new UnavailableException("Token not available after registration"))
-                )
+                .getOrElse {
+                  Failure(new UnauthorizedException("Token not available after registration"))
+                }
             }
             // FIXME: don't throw, return Failure
             case UNAUTHORIZED =>
               TokenAuthorizationFilter.authToken = Option.empty
               Failure(new UnauthorizedException(s"Unauthorized, login: ${response.status}"))
             case code =>
-              throw new IllegalArgumentException(
-                s"Unsupported response $code, login: ${response.status}"
-              )
+              Failure(new UnavailableException(s"Unsupported response $code", Option.empty))
           }
         }
         .recover {
-          case e @ (_: UnknownHostException | _: ConnectException) =>
-            Failure(new UnavailableException("Registration unavailable after timeout"))
+          case e @ (_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
+            Failure(new UnavailableException("Registration unavailable after timeout", Some(e)))
           case e: Throwable =>
             // FIXME: don't throw, return Failure
             throw new IllegalStateException(s"Unable to register: ${e.getMessage}", e)
@@ -205,8 +206,8 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             }
           }
           .recover {
-            case e @ (_: UnknownHostException | _: ConnectException) =>
-              Failure(new UnavailableException(s"Failed to submit: ${e.getMessage}"))
+            case e @ (_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
+              Failure(new UnavailableException(s"Failed to submit: ${e.getMessage}", Some(e)))
             case e: Throwable => {
               Failure(new Exception(s"Failed to request: ${e.getMessage}", e))
             }
@@ -229,7 +230,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         Future(f)
       case f @ Failure(UnauthorizedException(_)) =>
         Future(f)
-      case f @ Failure(UnavailableException(_)) =>
+      case f @ Failure(UnavailableException(_, _)) =>
         Future(f)
       case _ @t =>
         throw new IllegalArgumentException("Unknown failure type: " + t.toString)
@@ -315,4 +316,5 @@ private case class NoWorkException() extends Exception()
 
 private case class UnauthorizedException(msg: String) extends Exception(msg)
 
-private case class UnavailableException(msg: String) extends Exception(msg)
+private case class UnavailableException(msg: String, cause: Option[Throwable])
+    extends Exception(msg, cause.getOrElse(null))
