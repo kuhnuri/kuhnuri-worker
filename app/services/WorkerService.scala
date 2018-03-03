@@ -25,9 +25,13 @@ trait WorkerService {
 }
 
 @Singleton
-class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configuration: Configuration,
-                                    worker: Worker, poller: Poller, stateService: StateService,
-                                    appLifecycle: ApplicationLifecycle) extends WorkerService {
+class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
+                                    configuration: Configuration,
+                                    worker: Worker,
+                                    poller: Poller,
+                                    stateService: StateService,
+                                    appLifecycle: ApplicationLifecycle)
+    extends WorkerService {
 
   private val logger = Logger(this.getClass)
 
@@ -37,11 +41,17 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
     logger.info("Shutdown requested")
     val promise = Promise[Unit]()
     shutdownPromise = Some(promise)
-    val f = Future.sequence(List(
-      promise.future.map { v => logger.info(s"shutdown promise.future result $v"); v },
+    val f = Future.sequence(
+      List(
+        promise.future.map { v =>
+          logger.info(s"shutdown promise.future result $v"); v
+        },
 //      Future { worker.shutdown() },
-      poller.unregister().map { v => logger.info(s"unregister result $v"); v }
-    ))
+        poller.unregister().map { v =>
+          logger.info(s"unregister result $v"); v
+        }
+      )
+    )
     f
   }
 
@@ -52,7 +62,8 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
   private def infiniteLoop(): Future[Unit] = {
     val nf = loopTask()
     nf.onComplete {
-      case Failure(_: NoSuchElementException) => logger.info("nested infiniteLoop: NoSuchElementException"); cleanup()
+      case Failure(_: NoSuchElementException) =>
+        logger.info("nested infiniteLoop: NoSuchElementException"); cleanup()
       case _ => ()
     }
     val f = Future(nf).map(_ => ())
@@ -86,12 +97,12 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
       Future(())
     } else {
       val f: Future[Try[Task]] = for {
-      //        _ <- lock()
-        response <- poller.getWork()
-        ser <- stateService.persist(response)
-        res <- worker.process(ser)
+        //        _ <- lock()
+        response  <- poller.getWork()
+        ser       <- stateService.persist(response)
+        res       <- worker.process(ser)
         submitRes <- poller.submitResults(res)
-        clean <- stateService.cleanJob(submitRes)
+        clean     <- stateService.cleanJob(submitRes)
       } yield clean
 //      f.onSuccess {
 //        case Failure(t) => {
@@ -100,6 +111,17 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext, configur
 //        }
 //        case _ => ()
 //      }
+      f.onSuccess {
+        case Failure(UnavailableException(msg)) => {
+          logger.debug("Queue unavailable, wait: " + msg);
+          Thread.sleep(5000)
+          ()
+        }
+        case Failure(e) => {
+          logger.info("Failure: " + e.getMessage);
+          ()
+        }
+      }
       f.onFailure {
         case t: Throwable => {
           t.printStackTrace()
