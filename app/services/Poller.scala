@@ -52,7 +52,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   protected var currentStatus: ConversionStatus = Busy()
   // FIXME What to do here, wait in loop until we can register?
   TokenAuthorizationFilter.authToken = Option.empty //register().toOption
-  logger.debug(s"Token: ${TokenAuthorizationFilter.authToken}")
+  //  logger.debug(s"Token: ${TokenAuthorizationFilter.authToken}")
 
   private def getToken(): Future[Try[String]] = {
     if (authToken.isDefined) {
@@ -94,23 +94,30 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   }
 
   override def unregister(): Future[Unit] = {
-    logger.info(s"unregister: ${TokenAuthorizationFilter.authToken}")
-    ws.url(unregisterUrl)
-      .addHttpHeaders(AUTH_TOKEN_HEADER -> authToken.get)
-      .withRequestTimeout(10000.millis)
-      .post("")
-      .map { response =>
-        response.status match {
-          case OK =>
-            logger.info("Successfully unregistered")
-            ()
-          case UNAUTHORIZED =>
-            TokenAuthorizationFilter.authToken = Option.empty
-            throw new IllegalArgumentException(s"Unauthorized, login: ${response.status}")
-          case code =>
-            throw new IllegalArgumentException(s"Unsupported response $code, login: ${response.status}")
-        }
+    getToken().flatMap {
+      case Success(token) => {
+        logger.info(s"unregister: ${token}")
+        ws.url(unregisterUrl)
+          .addHttpHeaders(AUTH_TOKEN_HEADER -> token)
+          .withRequestTimeout(10000.millis)
+          .post("")
+          .map { response =>
+            response.status match {
+              case OK =>
+                logger.info("Successfully unregistered")
+                ()
+              case UNAUTHORIZED =>
+                TokenAuthorizationFilter.authToken = Option.empty
+                throw new IllegalArgumentException(s"Unauthorized, login: ${response.status}")
+              case code =>
+                throw new IllegalArgumentException(s"Unsupported response $code, login: ${response.status}")
+            }
+          }
       }
+      case Failure(e) => {
+        Future(Failure(e))
+      }
+    }
   }
 
   private def readTranstypes: Seq[String] = {
@@ -155,10 +162,10 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
           }
           .recover {
             case e: UnknownHostException =>
-//              e.printStackTrace()
+              //              e.printStackTrace()
               Failure(new UnavailableException(s"Failed to submit: ${e.getMessage}"))
             case e: ConnectException =>
-//              e.printStackTrace()
+              //              e.printStackTrace()
               Failure(new UnavailableException(s"Failed to submit: ${e.getMessage}"))
             case e: Throwable => {
               Failure(new Exception(s"Failed to request: ${e.getMessage}", e))
@@ -195,38 +202,47 @@ class RestPoller @Inject()(implicit context: ExecutionContext, ws: WSClient,
   }
 
   private def submitJob(job: Job, res: Try[Task]): Future[Try[Task]] = {
-    // FIXME
-    val log = List() //cacheListener.messages.map(_.msg.toString)
-    //        cacheListener.messages.clear()
-    val otRes: JobResult = JobResult(job, log)
+    getToken()
+      .flatMap {
+        case Success(token) => {
+          // FIXME
+          val log = List() //cacheListener.messages.map(_.msg.toString)
+          //        cacheListener.messages.clear()
+          val otRes: JobResult = JobResult(job, log)
 
-    val request: WSRequest = ws.url(submitUrl)
-    val complexRequest: WSRequest = request
-      .addHttpHeaders(
-        AUTH_TOKEN_HEADER -> authToken.get)
-      .withRequestTimeout(10000.millis)
-    logger.debug(s"Submit ${otRes.job.id} results to queue")
-    complexRequest
-      .put(Json.toJson(otRes))
-      .map { response =>
-        response.status match {
-          case OK =>
-            res
-          case UNAUTHORIZED =>
-            TokenAuthorizationFilter.authToken = Option.empty
-            Failure(new IllegalStateException(s"Unauthorized, login: ${response.status}"))
-          case _ =>
-            Failure(new IllegalArgumentException(s"Submit responded with ${response.status}"))
+          val request: WSRequest = ws.url(submitUrl)
+          val complexRequest: WSRequest = request
+            .addHttpHeaders(
+              AUTH_TOKEN_HEADER -> token)
+            .withRequestTimeout(10000.millis)
+          logger.debug(s"Submit ${otRes.job.id} results to queue")
+          complexRequest
+            .put(Json.toJson(otRes))
+            .map { response =>
+              response.status match {
+                case OK =>
+                  res
+                case UNAUTHORIZED =>
+                  TokenAuthorizationFilter.authToken = Option.empty
+                  Failure(new IllegalStateException(s"Unauthorized, login: ${response.status}"))
+                case _ =>
+                  Failure(new IllegalArgumentException(s"Submit responded with ${response.status}"))
+              }
+            }
+            .recover {
+              //            case e: UnknownHostException => {
+              //            case e: ConnectException => {
+              case e: Throwable => {
+                //              e.printStackTrace()
+                Failure(new Exception("Failed to submit: " + e.getMessage, e))
+              }
+            }
+        }
+        case Failure(e) => {
+          Future(Failure(e))
         }
       }
-      .recover {
-        //            case e: UnknownHostException => {
-        //            case e: ConnectException => {
-        case e: Throwable => {
-          //              e.printStackTrace()
-          Failure(new Exception("Failed to submit: " + e.getMessage, e))
-        }
-      }
+
   }
 
   private def idle(): Future[Try[Job]] = {
