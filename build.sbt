@@ -17,7 +17,6 @@ libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test"
 libraryDependencies += "org.apache.ant" % "ant" % "1.10.2"
 libraryDependencies += "org.dita-ot" % "dost" % "3.0"
-libraryDependencies += "org.mindrot" % "jbcrypt" % "0.4"
 
 stage := {
   import java.nio.file._
