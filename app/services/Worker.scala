@@ -2,8 +2,8 @@ package services
 
 import java.io.File
 import java.net.URI
-import javax.inject.Inject
 
+import javax.inject.Inject
 import models._
 import org.dita.dost.{Processor, ProcessorFactory}
 import play.Environment
@@ -25,13 +25,14 @@ trait Worker {
   def log(offset: Int): Seq[String]
 
   def process(tryJob: Try[Job]): Future[Try[Task]]
-//  def run(): Future[Unit]
 
-//  def shutdown(): Unit
+  //  def run(): Future[Unit]
+
+  //  def shutdown(): Unit
 }
 
 class SimpleWorker @Inject()(implicit context: ExecutionContext,
-                                      configuration: Configuration, environment: Environment) extends Worker {
+                             configuration: Configuration, environment: Environment) extends Worker {
 
   private val logger = Logger(this.getClass)
 
@@ -41,11 +42,11 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
   processorFactory.setBaseTempDir(baseTemp)
 
   protected val cacheListener = new CacheListener()
-//  protected var shutdownPromise = false
+  //  protected var shutdownPromise = false
 
-//  override def shutdown(): Unit = {
-//    shutdownPromise = true
-//  }
+  //  override def shutdown(): Unit = {
+  //    shutdownPromise = true
+  //  }
 
   private def download(job: Job): Future[Try[Task]] = Future {
     logger.debug(s"Download: " + job)
@@ -117,7 +118,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
           processor.run()
           val end = System.currentTimeMillis()
           logger.info(s"Process took ${format(end - start)}")
-//          logger.debug(s"Stopped DITA-OT")
+          //          logger.debug(s"Stopped DITA-OT")
           val res = task.copy(job = task.job.copy(status = StatusString.Done))
           Success(res)
         } catch {
@@ -138,8 +139,8 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
     processorFactory.setBaseTempDir(tempDir)
 
     val processor = processorFactory.newProcessor(task.job.transtype)
-//    logger.info(s"Message count: ${cacheListener.messages.size} -> ${cacheListener.messages}")
-//    assert(cacheListener.messages.isEmpty)
+    //    logger.info(s"Message count: ${cacheListener.messages.size} -> ${cacheListener.messages}")
+    //    assert(cacheListener.messages.isEmpty)
     cacheListener.messages.clear()
     processor.setLogger(cacheListener)
     processor.setInput(task.input)
@@ -198,24 +199,24 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
     case Failure(e) => Future(Failure(e))
   }
 
-//  override def run(): Future[Unit] = {
-//    if (shutdownPromise) {
-//      logger.debug(s"Shutdown requested, return immediately")
-//      Future(())
-//    } else {
-//      val f: Future[Try[Task]] = for {
-////        _ <- lock()
-//        response <- getWork()
-//        res <- process(response)
-//        submitRes <- submitResults(res)
-//      } yield submitRes
-////      f.onComplete {
-////        case _ => unlock()
-////      }
-//      // FIXME pass results out
-//      f.map(t => ())
-//    }
-//  }
+  //  override def run(): Future[Unit] = {
+  //    if (shutdownPromise) {
+  //      logger.debug(s"Shutdown requested, return immediately")
+  //      Future(())
+  //    } else {
+  //      val f: Future[Try[Task]] = for {
+  ////        _ <- lock()
+  //        response <- getWork()
+  //        res <- process(response)
+  //        submitRes <- submitResults(res)
+  //      } yield submitRes
+  ////      f.onComplete {
+  ////        case _ => unlock()
+  ////      }
+  //      // FIXME pass results out
+  //      f.map(t => ())
+  //    }
+  //  }
 
   override def log(offset: Int) = cacheListener.messages.slice(offset, cacheListener.messages.size)
     .map(msg => msg.msg)
