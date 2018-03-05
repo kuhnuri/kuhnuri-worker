@@ -104,13 +104,6 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
         submitRes <- poller.submitResults(res)
         clean     <- stateService.cleanJob(submitRes)
       } yield clean
-//      f.onSuccess {
-//        case Failure(t) => {
-//          t.printStackTrace()
-//          logger.error(s"Failure in run: ${t.getMessage}", t)
-//        }
-//        case _ => ()
-//      }
       f.onSuccess {
         case Failure(UnavailableException(msg, cause)) => {
           logger.debug("Queue unavailable, wait and retry: " + msg);
@@ -134,17 +127,8 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
         }
         case _ => ()
       }
-//      f.onComplete {
-//        //        case Failure(t: NoSuchElementException) => ()
-//        case Failure(t) => {
-//          t.printStackTrace()
-//          logger.error(s"Failure in run: ${t.getMessage}", t)
-//        }
-//        case _ => ()
-//        //        case _ => unlock()
-//      }
       // FIXME pass results out
-      f.map(t => ())
+      f.map(_ => ())
     }
   }
 
