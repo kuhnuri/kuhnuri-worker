@@ -10,4 +10,4 @@ source /opt/app/config/env.sh
 if [ -f /opt/app/RUNNING_PID ]; then
     rm /opt/app/RUNNING_PID
 fi
-java -Duser.dir=/opt/app -cp $CLASSPATH play.core.server.ProdServerStart
+java $JAVA_OPTS -Duser.dir=/opt/app -Dconfig.file=conf/production.conf -cp $CLASSPATH play.core.server.ProdServerStart
