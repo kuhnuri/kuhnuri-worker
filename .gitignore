@@ -11,3 +11,4 @@ catalog-dita.xml
 lib
 plugins
 xsl
+conf/production.conf
