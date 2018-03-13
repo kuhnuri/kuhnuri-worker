@@ -33,7 +33,7 @@ stage := {
     IO.copy(List("build_template.xml", "catalog-dita_template.xml", "integrator.xml")
       .map(name => (new File(new File(ditaOtDir, s"dita-ot-$ditaOtVersion"), name), new File(stageDir, name)))
     )
-    List("lib", "plugins", "config", "xsl")
+    List("bin", "lib", "plugins", "config", "xsl")
       .foreach { name => IO.copyDirectory(new File(new File(ditaOtDir, s"dita-ot-$ditaOtVersion"), name), new File(stageDir, name)) }
   } else {
     log.debug("Path exists, no need to download.")
