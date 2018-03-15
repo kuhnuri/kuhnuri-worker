@@ -16,14 +16,14 @@ libraryDependencies += filters
 libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test"
 libraryDependencies += "org.apache.ant" % "ant" % "1.10.2"
-libraryDependencies += "org.dita-ot" % "dost" % "3.0"
+libraryDependencies += "org.dita-ot" % "dost" % "3.0.3"
 
 stage := {
   import java.nio.file._
   val log = streams.value.log
 
   val stageDir = stage.value
-  val ditaOtVersion = System.getProperty("dita-ot.version", "3.0.2")
+  val ditaOtVersion = System.getProperty("dita-ot.version", "3.0.3")
   log.info(s"DITA-OT version: $ditaOtVersion")
 
   val ditaOtDir = baseDirectory.value / "target" / "universal" / "tmp" / "dita-ot"
