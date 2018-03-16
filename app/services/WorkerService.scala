@@ -1,5 +1,6 @@
 package services
 
+import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import models.{ConversionStatus, Task}
 import play.api.inject.ApplicationLifecycle
@@ -29,6 +30,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
                                     configuration: Configuration,
                                     worker: Worker,
                                     poller: Poller,
+                                    system: ActorSystem,
                                     stateService: StateService,
                                     appLifecycle: ApplicationLifecycle)
     extends WorkerService {
@@ -49,7 +51,11 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
 //      Future { worker.shutdown() },
         poller.unregister().map { v =>
           logger.info(s"unregister result $v"); v
-        }
+        },
+        system.terminate(),
+        Future(
+          System.exit(1)
+        )
       )
     )
     f
@@ -121,8 +127,13 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
         }
       }
       f.onFailure {
-        case t: Throwable => {
-          t.printStackTrace()
+        case e: Error => {
+//          logger.error("Got error and will re-throw: " + e.getMessage)
+//          e.printStackTrace()
+          throw e;
+        }
+        case t: Exception => {
+//          t.printStackTrace()
           logger.error(s"Failure in run: ${t.getMessage}", t)
         }
         case _ => ()

@@ -97,7 +97,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         .recover {
           case e @ (_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
             Failure(new UnavailableException("Registration unavailable after timeout", Some(e)))
-          case e: Throwable =>
+          case e: Exception =>
             // FIXME: don't throw, return Failure
             throw new IllegalStateException(s"Unable to register: ${e.getMessage}", e)
         }
@@ -208,7 +208,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
           .recover {
             case e @ (_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
               Failure(new UnavailableException(s"Failed to submit: ${e.getMessage}", Some(e)))
-            case e: Throwable => {
+            case e: Exception => {
               Failure(new Exception(s"Failed to request: ${e.getMessage}", e))
             }
           }
@@ -272,8 +272,8 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             .recover {
               //            case e: UnknownHostException => {
               //            case e: ConnectException => {
-              case e: Throwable => {
-                //              e.printStackTrace()
+              case e: Exception => {
+//                e.printStackTrace()
                 Failure(new Exception("Failed to submit: " + e.getMessage, e))
               }
             }

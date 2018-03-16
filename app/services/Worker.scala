@@ -4,7 +4,7 @@ import java.io.File
 import java.net.URI
 
 import javax.inject.Inject
-import models._
+import models.{Job, Task, StatusString}
 import org.dita.dost.{Processor, ProcessorFactory}
 import play.Environment
 import play.api.{Configuration, Logger}
@@ -80,7 +80,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
         case scheme => logger.warn(s"Input URI scheme ${scheme} not supported"); Failure(new ProcessorException(new IllegalArgumentException(s"Input URI scheme ${scheme} not supported"), job))
       }
     } catch {
-      case e: Throwable => e.printStackTrace(); Failure(new ProcessorException(e, job))
+      case e: Exception => e.printStackTrace(); Failure(new ProcessorException(e, job))
     }
   }
 
@@ -122,8 +122,12 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
           val res = task.copy(job = task.job.copy(status = StatusString.Done))
           Success(res)
         } catch {
-          case e: Throwable => {
-            e.printStackTrace();
+          case e: Throwable if getError(e).isDefined => {
+//            e.printStackTrace();
+            throw getError(e).get
+          }
+          case e: Exception => {
+//            e.printStackTrace();
             val res = task.job.copy(status = StatusString.Error)
             Failure(new ProcessorException(e, res))
           }
@@ -131,6 +135,16 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
       }
       case f => f
     }
+  }
+
+  private def getError(e: Throwable): Option[java.lang.Error] = {
+    if (e.isInstanceOf[java.lang.Error]) {
+      return Some(e.asInstanceOf[java.lang.Error])
+    }
+    if (e.getCause != null) {
+      return getError(e.getCause)
+    }
+    None
   }
 
   private def getProcessor(task: Task): Processor = {
@@ -181,7 +195,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
           case _ => throw new IllegalArgumentException(s"Upload target ${output} not supported")
         }
       } catch {
-        case e: Throwable => e.printStackTrace(); Failure(new ProcessorException(e, task.job))
+        case e: Exception => e.printStackTrace(); Failure(new ProcessorException(e, task.job))
       }
       case f => f
     }
