@@ -7,7 +7,7 @@ import java.nio.file.{Files, Paths}
 
 import javax.inject.Inject
 import models.{Job, Task}
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, Json}
 import play.api.{Configuration, Logger}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,6 +17,8 @@ import scala.util.{Failure, Success, Try}
   * Persists worker state to allow restarting after a crash.
   */
 trait StateService {
+  def get(): Future[Option[Job]]
+
   def cleanJob(submitRes: Try[Task]): Future[Try[Task]]
 
   def persist(src: Try[Job]): Future[Try[Job]]
@@ -34,6 +36,28 @@ class JsonStateService @Inject()(implicit context: ExecutionContext,
   private val stateFile = baseTemp.toPath.resolve(Paths.get("state.json"))
   if (!Files.exists(stateFile.getParent)) {
     Files.createDirectories(stateFile.getParent);
+  }
+
+  override def get(): Future[Option[Job]] = Future {
+    if (Files.exists(stateFile)) {
+      logger.debug("Reading " + stateFile)
+      try {
+        Json.parse(Files.readAllBytes(stateFile))
+          .validate[Job]
+          .map {
+            case task => Some(task)
+          }
+          .recoverTotal { e =>
+            throw new IllegalArgumentException(s"Invalid storage format: ${JsError.toJson(e)}")
+          }
+      } catch {
+        case e: IOException =>
+          logger.error("Failed to read persisted job state", e)
+          None
+      }
+    } else {
+      None
+    }
   }
 
   def cleanJob(submitRes: Try[Task]): Future[Try[Task]] = Future {

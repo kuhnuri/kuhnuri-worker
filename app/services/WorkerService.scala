@@ -2,7 +2,7 @@ package services
 
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
-import models.{ConversionStatus, Task}
+import models.{ConversionStatus, Job, Task}
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Logger}
 
@@ -122,6 +122,18 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
     f
   }
 
+  private def getWork(): Future[Try[Job]] = {
+    stateService.get()
+      .flatMap { oldTask: Option[Job] =>
+        oldTask
+          .map { t: Job =>
+            logger.info("Using old job")
+            Future(Success(t))
+          }
+          .getOrElse(poller.getWork())
+      }
+  }
+
   private def run(): Future[Unit] = {
     //    logger.info("run")
     if (shutdownPromise.isDefined) {
@@ -130,7 +142,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
     } else {
       val f: Future[Try[Task]] = for {
         //        _ <- lock()
-        response <- poller.getWork()
+        response <- getWork()
         ser <- stateService.persist(response)
         res <- worker.process(ser)
         submitRes <- poller.submitResults(res)
