@@ -8,6 +8,7 @@ import models.{Job, StatusString, Task}
 import org.dita.dost.{Processor, ProcessorFactory}
 import play.Environment
 import play.api.{Configuration, Logger}
+import services.Utils.{format, parse}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -97,17 +98,6 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
       }
     }
   }
-
-  private def parse(input: URI): (URI, URI) = {
-    val ssp = input.getSchemeSpecificPart
-    ssp.indexOf('!') match {
-      case i if i != -1 => (new URI(ssp.substring(0, i)), new URI(ssp.substring(i + 2)))
-      case _ => throw new IllegalArgumentException(s"Invalid JAR URI ${input}")
-    }
-
-  }
-
-  private def format(l: Long): String = "" + (l / 1000) + "." + (l % 1000) + " ms"
 
   private def runDitaOt(jobTry: Try[Task]): Future[Try[Task]] = Future {
     logger.debug(s"Process: " + jobTry)

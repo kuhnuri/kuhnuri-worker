@@ -1,6 +1,7 @@
 package services
 
 import java.io._
+import java.net.URI
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{FileVisitResult, Files, Path, SimpleFileVisitor}
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
@@ -88,5 +89,17 @@ object Utils {
       zip.close()
     }
   }
+
+
+  def parse(input: URI): (URI, URI) = {
+    val ssp = input.getSchemeSpecificPart
+    ssp.indexOf('!') match {
+      case i if i != -1 => (new URI(ssp.substring(0, i)), new URI(ssp.substring(i + 2)))
+      case _ => throw new IllegalArgumentException(s"Invalid JAR URI ${input}")
+    }
+
+  }
+
+  def format(l: Long): String = "" + (l / 1000) + "." + (l % 1000) + " ms"
 
 }
