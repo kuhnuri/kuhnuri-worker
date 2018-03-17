@@ -18,6 +18,10 @@ libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2
 libraryDependencies += "org.apache.ant" % "ant" % "1.10.2"
 libraryDependencies += "org.dita-ot" % "dost" % "3.0.3"
 
+sources in (Compile, doc) := Seq.empty
+
+publishArtifact in (Compile, packageDoc) := false
+
 stage := {
   import java.nio.file._
   val log = streams.value.log

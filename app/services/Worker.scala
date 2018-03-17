@@ -4,7 +4,7 @@ import java.io.File
 import java.net.URI
 
 import javax.inject.Inject
-import models.{Job, Task, StatusString}
+import models.{Job, StatusString, Task}
 import org.dita.dost.{Processor, ProcessorFactory}
 import play.Environment
 import play.api.{Configuration, Logger}
@@ -28,11 +28,12 @@ trait Worker {
 
   //  def run(): Future[Unit]
 
-  //  def shutdown(): Unit
+  def addStopHook(callback: () => Unit): Unit
 }
 
 class SimpleWorker @Inject()(implicit context: ExecutionContext,
-                             configuration: Configuration, environment: Environment) extends Worker {
+                             configuration: Configuration,
+                             environment: Environment) extends Worker {
 
   private val logger = Logger(this.getClass)
 
@@ -42,11 +43,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
   processorFactory.setBaseTempDir(baseTemp)
 
   protected val cacheListener = new CacheListener()
-  //  protected var shutdownPromise = false
-
-  //  override def shutdown(): Unit = {
-  //    shutdownPromise = true
-  //  }
+  var stopHook: Option[() => Unit] = None
 
   private def download(job: Job): Future[Try[Task]] = Future {
     logger.debug(s"Download: " + job)
@@ -74,13 +71,18 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
             //              // Download file
             //              // Unzip
             //            }
-            case _ => throw new IllegalArgumentException(s"Download target ${srcUri} not supported")
+            case _ =>
+              throw new IllegalArgumentException(s"Download target ${srcUri} not supported")
           }
         }
-        case scheme => logger.warn(s"Input URI scheme ${scheme} not supported"); Failure(new ProcessorException(new IllegalArgumentException(s"Input URI scheme ${scheme} not supported"), job))
+        case scheme =>
+          logger.warn(s"Input URI scheme ${scheme} not supported");
+          Failure(new ProcessorException(new IllegalArgumentException(s"Input URI scheme ${scheme} not supported"), job))
       }
     } catch {
-      case e: Exception => e.printStackTrace(); Failure(new ProcessorException(e, job))
+      case e: Exception =>
+//        e.printStackTrace();
+        Failure(new ProcessorException(e, job))
     }
   }
 
@@ -123,11 +125,11 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
           Success(res)
         } catch {
           case e: Throwable if getError(e).isDefined => {
-//            e.printStackTrace();
+            logger.debug("Error in runDitaOt: " + e.getMessage, e)
+            stopHook.foreach(callback => callback())
             throw getError(e).get
           }
           case e: Exception => {
-//            e.printStackTrace();
             val res = task.job.copy(status = StatusString.Error)
             Failure(new ProcessorException(e, res))
           }
@@ -189,13 +191,17 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
               //                // ZIP output directory
               //                // Upload ZIP
               //              }
-              case _ => throw new IllegalArgumentException(s"Upload target ${srcUri} not supported")
+              case _ =>
+                throw new IllegalArgumentException(s"Upload target ${srcUri} not supported")
             }
           }
-          case _ => throw new IllegalArgumentException(s"Upload target ${output} not supported")
+          case _ =>
+            throw new IllegalArgumentException(s"Upload target ${output} not supported")
         }
       } catch {
-        case e: Exception => e.printStackTrace(); Failure(new ProcessorException(e, task.job))
+        case e: Exception =>
+          //          e.printStackTrace();
+          Failure(new ProcessorException(e, task.job))
       }
       case f => f
     }
@@ -234,6 +240,10 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
 
   override def log(offset: Int) = cacheListener.messages.slice(offset, cacheListener.messages.size)
     .map(msg => msg.msg)
+
+  override def addStopHook(callback: () => Unit): Unit = {
+    stopHook = Some(callback)
+  }
 }
 
 case class ProcessorException(e: Throwable, job: Job) extends Exception(e)

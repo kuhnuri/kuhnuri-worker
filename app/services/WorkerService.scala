@@ -33,7 +33,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
                                     system: ActorSystem,
                                     stateService: StateService,
                                     appLifecycle: ApplicationLifecycle)
-    extends WorkerService {
+  extends WorkerService {
 
   private val logger = Logger(this.getClass)
 
@@ -41,24 +41,35 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
   var shutdownPromise: Option[Promise[Unit]] = None
   appLifecycle.addStopHook { () =>
     logger.info("Shutdown requested")
+    shutdownPromise
+      .orElse(Some(Promise[Unit]()))
+      .map { promise =>
+        if (promise.isCompleted) {
+          logger.info("Shutdown promise is already completed, return immediately")
+          Future.successful(())
+        } else {
+          logger.info("Run shutdown process")
+          val f = Future.sequence(
+            List(
+              promise.future.map { v =>
+                logger.info(s"shutdown promise.future result $v"); v
+              },
+              //      Future { worker.shutdown() },
+              poller.unregister().map { v =>
+                logger.info(s"unregister result $v"); v
+              }
+            )
+          )
+          f
+        }
+      }
+      .getOrElse(Future.successful(()))
+  }
+  worker.addStopHook { () => {
     val promise = Promise[Unit]()
+    promise.success(())
     shutdownPromise = Some(promise)
-    val f = Future.sequence(
-      List(
-        promise.future.map { v =>
-          logger.info(s"shutdown promise.future result $v"); v
-        },
-//      Future { worker.shutdown() },
-        poller.unregister().map { v =>
-          logger.info(s"unregister result $v"); v
-        },
-        system.terminate(),
-        Future(
-          System.exit(1)
-        )
-      )
-    )
-    f
+  }
   }
 
   logger.info("Start processing loop")
@@ -69,46 +80,61 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
     val nf = loopTask()
     nf.onComplete {
       case Failure(_: NoSuchElementException) =>
-        logger.info("nested infiniteLoop: NoSuchElementException"); cleanup()
+        logger.info("nested infiniteLoop: NoSuchElementException");
+        cleanup()
       case _ => ()
     }
+    nf.onFailure {
+      case e: java.lang.Error =>
+        logger.error("infinite loop failure: " + e.getMessage, e)
+      case e: Throwable =>
+        logger.error("infinite loop throwable: " + e.getMessage, e)
+    }
     val f = Future(nf).map(_ => ())
-//    f.onComplete {
-//      case Failure(_: NoSuchElementException) => logger.info("infiniteLoop: NoSuchElementException"); cleanup()
-//      case _ => ()
-//    }
+    //    f.onComplete {
+    //      case Failure(_: NoSuchElementException) =>
+    //        logger.info("infiniteLoop: NoSuchElementException");
+    //        cleanup()
+    //      case _ => ()
+    //    }
     f
   }
 
   private def loopTask(): Future[Unit] = {
-//    logger.info("loopTask")
+    //    logger.info("loopTask")
     val f = run()
       .filter((u: Unit) => {
         logger.debug(s"Shutdown = ${shutdownPromise.isEmpty}")
         shutdownPromise.isEmpty
       })
       .flatMap(_ => loopTask())
-//    f.onComplete {
-//      case Failure(t: NoSuchElementException) => logger.info("loopTask: NoSuchElementException")
-//      case Failure(t) => t.printStackTrace(); logger.error(s"Failure in loopTask $t")
-//      case _ => ()
-//    }
+    //    f.onComplete {
+    //      case Failure(t: NoSuchElementException) => logger.info("loopTask: NoSuchElementException")
+    //      case Failure(t) => t.printStackTrace(); logger.error(s"Failure in loopTask $t")
+    //      case _ => ()
+    //    }
+    f.onFailure {
+      case e: java.lang.Error =>
+        logger.error("loopTask failure: " + e.getMessage, e)
+      case e: Throwable =>
+        logger.error("loopTask throwable: " + e.getMessage, e)
+    }
     f
   }
 
   private def run(): Future[Unit] = {
-//    logger.info("run")
+    //    logger.info("run")
     if (shutdownPromise.isDefined) {
       logger.info("Shutdown requested, return immediately")
       Future(())
     } else {
       val f: Future[Try[Task]] = for {
         //        _ <- lock()
-        response  <- poller.getWork()
-        ser       <- stateService.persist(response)
-        res       <- worker.process(ser)
+        response <- poller.getWork()
+        ser <- stateService.persist(response)
+        res <- worker.process(ser)
         submitRes <- poller.submitResults(res)
-        clean     <- stateService.cleanJob(submitRes)
+        clean <- stateService.cleanJob(submitRes)
       } yield clean
       f.onSuccess {
         case Failure(UnavailableException(msg, cause)) => {
@@ -122,18 +148,19 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
           ()
         }
         case Failure(e) => {
-          logger.info("Failure: " + e.getMessage);
+          logger.info("Failure: " + e.getMessage, e);
           ()
         }
       }
       f.onFailure {
-        case e: Error => {
-//          logger.error("Got error and will re-throw: " + e.getMessage)
-//          e.printStackTrace()
+        case e: java.lang.Error => {
+          //          logger.error("Got error and will re-throw: " + e.getMessage)
+          //          e.printStackTrace()
+          logger.error("Error in run: " + e.getMessage, e)
           throw e;
         }
-        case t: Exception => {
-//          t.printStackTrace()
+        case t: Throwable => {
+          //          t.printStackTrace()
           logger.error(s"Failure in run: ${t.getMessage}", t)
         }
         case _ => ()
