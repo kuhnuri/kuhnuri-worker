@@ -49,7 +49,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
           Future.successful(())
         } else {
           logger.info("Run shutdown process")
-          val f = Future.sequence(
+          Future.sequence(
             List(
               promise.future.map { v =>
                 logger.info(s"shutdown promise.future result $v"); v
@@ -60,7 +60,6 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
               }
             )
           )
-          f
         }
       }
       .getOrElse(Future.successful(()))
