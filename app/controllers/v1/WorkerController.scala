@@ -3,7 +3,7 @@ package controllers.v1
 import javax.inject._
 
 import models._
-import models.Job._
+import models.Task._
 import models.ConversionStatus._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._

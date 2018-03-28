@@ -1,32 +1,63 @@
 package models
 
-import java.net.{URI, URISyntaxException}
+import java.time.{LocalDateTime, ZoneOffset, ZonedDateTime}
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import models.Job.jobWrites
-import models.Job.jobReads
 
-sealed case class Task(input: URI, output: URI, job: Job)
+sealed case class Task(id: String,
+                       input: String,
+                       output: String,
+                       transtype: String,
+                       params: Map[String, String],
+                       status: StatusString,
+                       priority: Int,
+                       created: LocalDateTime,
+                       processing: LocalDateTime,
+                       worker: String,
+                       finished: Option[LocalDateTime])
 
 object Task {
-  implicit val uriWrites: Writes[URI] = Writes { uri => JsString(uri.toString) }
 
-  implicit val taskWrites: Writes[Task] = (
-    (JsPath \ "input").write[URI] and
-      (JsPath \ "output").write[URI] and
-      (JsPath \ "job").write[Job]
-    ) (unlift(Task.unapply _))
+  import models.StatusString.{jobStatusStringReads, jobStatusStringWrites}
 
-  implicit val uriReads = Reads[URI](j => try {
-      JsSuccess(new URI(j.as[JsString].value))
+  implicit val localDateTimeWrites =
+    Writes[LocalDateTime](s => JsString(s.atOffset(ZoneOffset.UTC).toString))
+
+
+  implicit val localDateTimeReads =
+    Reads[LocalDateTime](j => try {
+      JsSuccess(ZonedDateTime.parse(j.as[JsString].value).toLocalDateTime)
     } catch {
-      case e: URISyntaxException  => JsError(e.toString)
+      case e: IllegalArgumentException => JsError(e.toString)
     })
 
-  implicit val taskReads: Reads[Task] = (
-    (JsPath \ "input").read[URI] and
-      (JsPath \ "output").read[URI] and
-      (JsPath \ "job").read[Job]
+  implicit val jobWrites: Writes[Task] = (
+    (JsPath \ "id").write[String] and
+      (JsPath \ "input").write[String] and
+      (JsPath \ "output").write[String] and
+      (JsPath \ "transtype").write[String] and
+      (JsPath \ "params").write[Map[String, String]] and
+      (JsPath \ "status").write[StatusString] and
+      (JsPath \ "priority").write[Int] and
+      (JsPath \ "created").write[LocalDateTime] and
+      (JsPath \ "processing").write[LocalDateTime] and
+      (JsPath \ "worker").write[String] and
+      (JsPath \ "finished").writeNullable[LocalDateTime]
+    ) (unlift(Task.unapply _))
+  implicit val jobReads: Reads[Task] = (
+    (JsPath \ "id").read[String] and
+      (JsPath \ "input").read[String] /*.filter(new URI(_).isAbsolute)*/ and
+      (JsPath \ "output").read[String] /*.filter(_.map {
+        new URI(_).isAbsolute
+      }.getOrElse(true))*/ and
+      (JsPath \ "transtype").read[String] and
+      (JsPath \ "params").read[Map[String, String]] and
+      (JsPath \ "status").read[StatusString] and
+      (JsPath \ "priority").read[Int] and
+      (JsPath \ "created").read[LocalDateTime] and
+      (JsPath \ "processing").read[LocalDateTime] and
+      (JsPath \ "worker").read[String] and
+      (JsPath \ "finished").readNullable[LocalDateTime]
     ) (Task.apply _)
 }

@@ -29,9 +29,9 @@ trait Poller {
 
   def status: ConversionStatus
 
-  def submitResults(res: Try[Task]): Future[Try[Task]]
+  def submitResults(res: Try[Work]): Future[Try[Work]]
 
-  def getWork(): Future[Try[Job]]
+  def getWork(): Future[Try[Task]]
 
   def unregister(): Future[Unit]
 
@@ -160,7 +160,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
   /**
     * Request work from Queue.
     */
-  def getWork(): Future[Try[Job]] = {
+  def getWork(): Future[Try[Task]] = {
     getToken().flatMap {
       case Success(token) => {
         //    lock()
@@ -169,13 +169,13 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         val complexRequest: WSRequest = request
           .addHttpHeaders("Accept" -> "application/json", AUTH_TOKEN_HEADER -> token)
           .withRequestTimeout(10000.millis)
-        val res: Future[Try[Job]] = complexRequest
+        val res: Future[Try[Task]] = complexRequest
           .post(Json.toJson(transtypes))
           .flatMap { response =>
             response.status match {
               case OK =>
                 response.json
-                  .validate[Job]
+                  .validate[Task]
                   .map {
                     case job => Future(Success(job))
                   }
@@ -220,10 +220,10 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
     }
   }
 
-  def submitResults(res: Try[Task]): Future[Try[Task]] = {
+  def submitResults(res: Try[Work]): Future[Try[Work]] = {
     val f = res match {
       case Success(task) =>
-        submitJob(task.job.copy(status = StatusString.Done), res)
+        submitJob(task.task.copy(status = StatusString.Done), res)
       case Failure(ProcessorException(_, job)) =>
         submitJob(job.copy(status = StatusString.Error), res)
       case f @ Failure(NoWorkException()) =>
@@ -241,7 +241,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
     f
   }
 
-  private def submitJob(job: Job, res: Try[Task]): Future[Try[Task]] = {
+  private def submitJob(job: Task, res: Try[Work]): Future[Try[Work]] = {
     getToken()
       .flatMap {
         case Success(token) => {
@@ -285,7 +285,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
 
   }
 
-  private def idle(): Future[Try[Job]] = {
+  private def idle(): Future[Try[Task]] = {
     //    assert(currentStatus.isInstanceOf[Free])
     Future {
       logger.debug(s"Idle for ${idleDuration}ms")

@@ -4,7 +4,7 @@ import java.io.File
 import java.net.URI
 
 import javax.inject.Inject
-import models.{Job, StatusString, Task}
+import models.{Task, StatusString, Work}
 import org.dita.dost.{Processor, ProcessorFactory}
 import play.Environment
 import play.api.{Configuration, Logger}
@@ -25,7 +25,7 @@ trait Worker {
 
   def log(offset: Int): Seq[String]
 
-  def process(tryJob: Try[Job]): Future[Try[Task]]
+  def process(tryJob: Try[Task]): Future[Try[Work]]
 
   //  def run(): Future[Unit]
 
@@ -46,7 +46,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
   protected val cacheListener = new CacheListener()
   var stopHook: Option[() => Unit] = None
 
-  private def download(job: Job): Future[Try[Task]] = Future {
+  private def download(job: Task): Future[Try[Work]] = Future {
     logger.debug(s"Download: " + job)
     try {
       val input = new URI(job.input)
@@ -54,7 +54,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
       input.getScheme match {
         case "file" | "http" | "https" if !input.getPath.endsWith("/") => {
           logger.info(s"Read source directly from " + job.input)
-          Success(Task(new URI(job.input), getProcessOutputDir(job), job))
+          Success(Work(new URI(job.input), getProcessOutputDir(job), job))
         }
         case "jar" => {
           val (srcUri, fileUri) = parse(input)
@@ -66,7 +66,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
               Utils.unzip(tmpIn, tmpOut)
               val inputUri = tmpOut.toURI.resolve(fileUri)
               logger.info(s"Use processing input " + inputUri)
-              Success(Task(inputUri, getProcessOutputDir(job), job))
+              Success(Work(inputUri, getProcessOutputDir(job), job))
             }
             //            case "http" | "https" => {
             //              // Download file
@@ -87,7 +87,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
     }
   }
 
-  private def getProcessOutputDir(job: Job): URI = {
+  private def getProcessOutputDir(job: Task): URI = {
     val out = new URI(job.output)
     out.getScheme match {
       case "file" if out.getPath.endsWith("/") => {
@@ -99,7 +99,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
     }
   }
 
-  private def runDitaOt(jobTry: Try[Task]): Future[Try[Task]] = Future {
+  private def runDitaOt(jobTry: Try[Work]): Future[Try[Work]] = Future {
     logger.debug(s"Process: " + jobTry)
     jobTry match {
       case Success(task) => {
@@ -111,7 +111,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
           val end = System.currentTimeMillis()
           logger.info(s"Process took ${format(end - start)}")
           //          logger.debug(s"Stopped DITA-OT")
-          val res = task.copy(job = task.job.copy(status = StatusString.Done))
+          val res = task.copy(task = task.task.copy(status = StatusString.Done))
           Success(res)
         } catch {
           case e: Throwable if getError(e).isDefined => {
@@ -120,7 +120,7 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
             throw getError(e).get
           }
           case e: Exception => {
-            val res = task.job.copy(status = StatusString.Error)
+            val res = task.task.copy(status = StatusString.Error)
             Failure(new ProcessorException(e, res))
           }
         }
@@ -139,12 +139,12 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
     None
   }
 
-  private def getProcessor(task: Task): Processor = {
+  private def getProcessor(task: Work): Processor = {
     val processorFactory = ProcessorFactory.newInstance(ditaDir)
-    val tempDir = new File(baseTemp, task.job.id + File.separator + "tmp")
+    val tempDir = new File(baseTemp, task.task.id + File.separator + "tmp")
     processorFactory.setBaseTempDir(tempDir)
 
-    val processor = processorFactory.newProcessor(task.job.transtype)
+    val processor = processorFactory.newProcessor(task.task.transtype)
     //    logger.info(s"Message count: ${cacheListener.messages.size} -> ${cacheListener.messages}")
     //    assert(cacheListener.messages.isEmpty)
     cacheListener.messages.clear()
@@ -156,11 +156,11 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
     processor
   }
 
-  private def upload(tryTask: Try[Task]): Future[Try[Task]] = Future {
+  private def upload(tryTask: Try[Work]): Future[Try[Work]] = Future {
     logger.debug(s"Upload: " + tryTask)
     tryTask match {
       case Success(task) => try {
-        val output = new URI(task.job.output)
+        val output = new URI(task.task.output)
         output.getScheme match {
           case "file" if output.getPath.endsWith("/") => {
             logger.info(s"Already generated output to ${task.output} directory")
@@ -191,13 +191,13 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
       } catch {
         case e: Exception =>
           //          e.printStackTrace();
-          Failure(new ProcessorException(e, task.job))
+          Failure(new ProcessorException(e, task.task))
       }
       case f => f
     }
   }
 
-  override def process(tryJob: Try[Job]): Future[Try[Task]] = tryJob match {
+  override def process(tryJob: Try[Task]): Future[Try[Work]] = tryJob match {
     case Success(job) => {
       logger.info(s"Got job ${job.id}")
       for {
@@ -236,4 +236,4 @@ class SimpleWorker @Inject()(implicit context: ExecutionContext,
   }
 }
 
-case class ProcessorException(e: Throwable, job: Job) extends Exception(e)
+case class ProcessorException(e: Throwable, job: Task) extends Exception(e)

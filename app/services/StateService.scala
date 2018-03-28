@@ -6,7 +6,7 @@ import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.{Files, Paths}
 
 import javax.inject.Inject
-import models.{Job, Task}
+import models.{Task, Work}
 import play.api.libs.json.{JsError, Json}
 import play.api.{Configuration, Logger}
 
@@ -17,11 +17,11 @@ import scala.util.{Failure, Success, Try}
   * Persists worker state to allow restarting after a crash.
   */
 trait StateService {
-  def get(): Future[Option[Job]]
+  def get(): Future[Option[Task]]
 
-  def cleanJob(submitRes: Try[Task]): Future[Try[Task]]
+  def cleanJob(submitRes: Try[Work]): Future[Try[Work]]
 
-  def persist(src: Try[Job]): Future[Try[Job]]
+  def persist(src: Try[Task]): Future[Try[Task]]
 }
 
 /**
@@ -38,12 +38,12 @@ class JsonStateService @Inject()(implicit context: ExecutionContext,
     Files.createDirectories(stateFile.getParent);
   }
 
-  override def get(): Future[Option[Job]] = Future {
+  override def get(): Future[Option[Task]] = Future {
     if (Files.exists(stateFile)) {
       logger.debug("Reading " + stateFile)
       try {
         Json.parse(Files.readAllBytes(stateFile))
-          .validate[Job]
+          .validate[Task]
           .map {
             case task => Some(task)
           }
@@ -60,7 +60,7 @@ class JsonStateService @Inject()(implicit context: ExecutionContext,
     }
   }
 
-  def cleanJob(submitRes: Try[Task]): Future[Try[Task]] = Future {
+  def cleanJob(submitRes: Try[Work]): Future[Try[Work]] = Future {
     if (Files.exists(stateFile)) {
       logger.debug("Deleting " + stateFile)
       try {
@@ -72,7 +72,7 @@ class JsonStateService @Inject()(implicit context: ExecutionContext,
     submitRes
   }
 
-  def persist(src: Try[Job]): Future[Try[Job]] = Future {
+  def persist(src: Try[Task]): Future[Try[Task]] = Future {
     src match {
       case Success(job) => {
         logger.debug("Writing " + stateFile)

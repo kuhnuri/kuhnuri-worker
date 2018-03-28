@@ -4,7 +4,7 @@ import java.net.URI
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import models.Task.uriWrites
+import models.Work.uriWrites
 
 case class Register(id: String, password: String, uri: URI)
 
