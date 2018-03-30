@@ -4,8 +4,8 @@ import java.net.{URI, URISyntaxException}
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import models.Task.jobWrites
-import models.Task.jobReads
+import models.Task.taskWrites
+import models.Task.taskReads
 
 /**
   * Work item for a task.
