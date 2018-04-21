@@ -154,12 +154,16 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
           ()
         }
         case Failure(UnauthorizedException(msg)) => {
-          logger.error("Unauthorized, wait and retry: " + msg);
+          logger.info("Unauthorized, wait and retry: " + msg);
           Thread.sleep(5000)
           ()
         }
+        case Failure(NoWorkException()) => {
+          logger.debug("No work");
+          ()
+        }
         case Failure(e) => {
-          logger.info("Failure: " + e.getMessage, e);
+          logger.error("Failure: " + e.getMessage, e);
           ()
         }
       }
