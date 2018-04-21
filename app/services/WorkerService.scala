@@ -103,7 +103,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
     //    logger.info("loopTask")
     val f = run()
       .filter((u: Unit) => {
-        logger.debug(s"Shutdown = ${shutdownPromise.isEmpty}")
+        logger.debug(s"Shutdown = ${shutdownPromise.isDefined}")
         shutdownPromise.isEmpty
       })
       .flatMap(_ => loopTask())
