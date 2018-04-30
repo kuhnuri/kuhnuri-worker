@@ -8,7 +8,7 @@ sealed case class JobResult(job: Task, log: Seq[String])
 
 object JobResult {
   implicit val jobResultWrites: Writes[JobResult] = (
-    (JsPath \ "job").write[Task] and
+    (JsPath \ "task").write[Task] and
       (JsPath \ "log").write[Seq[String]]
     ) (unlift(JobResult.unapply _))
 }
