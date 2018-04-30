@@ -13,7 +13,7 @@ import services.Utils.{format, parse}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class SimpleWorker @Inject()(implicit context: ExecutionContext,
+class DitaOtWorker @Inject()(implicit context: ExecutionContext,
                              configuration: Configuration,
                              environment: Environment) extends Worker {
 

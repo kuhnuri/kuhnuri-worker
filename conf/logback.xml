@@ -27,7 +27,7 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG"/>
 
-  <logger name="services.SimpleWorker" level="INFO">
+  <logger name="services.DitaOtWorker" level="INFO">
     <appender-ref ref="STDOUT" />
   </logger>
   <logger name="services.RestPoller" level="DEBUG">
