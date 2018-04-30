@@ -18,6 +18,7 @@ import play.api.{Configuration, Logger}
 import scala.collection.immutable.List
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 class RestPoller @Inject()(implicit context: ExecutionContext,
