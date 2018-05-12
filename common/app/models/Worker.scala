@@ -2,9 +2,9 @@ package models
 
 import java.net.URI
 
+import models.Work.uriWrites
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import models.Work.uriWrites
 
 case class Register(id: String, password: String, uri: URI)
 

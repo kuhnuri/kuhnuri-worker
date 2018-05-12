@@ -3,8 +3,6 @@ package services
 import java.net.{ConnectException, URI, UnknownHostException}
 import java.util.concurrent.TimeoutException
 
-import filters.TokenAuthorizationFilter
-import filters.TokenAuthorizationFilter.{AUTH_TOKEN_HEADER, authToken}
 import javax.inject.Inject
 import javax.xml.XMLConstants
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
@@ -17,8 +15,8 @@ import play.api.{Configuration, Logger}
 
 import scala.collection.immutable.List
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 class RestPoller @Inject()(implicit context: ExecutionContext,
