@@ -3,6 +3,7 @@ package services
 import java.net.{ConnectException, URI, UnknownHostException}
 import java.util.concurrent.TimeoutException
 
+import filters.TokenAuthorizationFilter
 import javax.inject.Inject
 import javax.xml.XMLConstants
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
@@ -22,7 +23,8 @@ import scala.util.{Failure, Success, Try}
 class RestPoller @Inject()(implicit context: ExecutionContext,
                            ws: WSClient,
                            configuration: Configuration,
-                           environment: Environment)
+                           environment: Environment,
+                           transtypeConf: TranstypeConf)
     extends Poller {
 
   private val logger = Logger(this.getClass)
@@ -39,15 +41,15 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
   private val queuePassword = configuration.get[String]("queue.password")
   private val workerBaseUrl = new URI(configuration.get[String]("worker.url"))
 
-  protected val transtypes                      = readTranstypes
+  protected val transtypes                      = transtypeConf.get
   protected var currentStatus: ConversionStatus = Busy()
   // FIXME What to do here, wait in loop until we can register?
   TokenAuthorizationFilter.authToken = Option.empty //register().toOption
   //  logger.debug(s"Token: ${TokenAuthorizationFilter.authToken}")
 
   private def getToken(): Future[Try[String]] = {
-    if (authToken.isDefined) {
-      Future(Success(authToken.get))
+    if (TokenAuthorizationFilter.authToken.isDefined) {
+      Future(Success(TokenAuthorizationFilter.authToken.get))
     } else {
       val register = Register(queueUsername, queuePassword, workerBaseUrl)
       logger.info(s"Register to queue $registerUrl as $register")
@@ -59,7 +61,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             case OK => {
               logger.info("Registration to queue done")
               response
-                .header(AUTH_TOKEN_HEADER)
+                .header(TokenAuthorizationFilter.AUTH_TOKEN_HEADER)
                 .map(token => {
                   TokenAuthorizationFilter.authToken = Option(token)
                   Success(token)
@@ -91,7 +93,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
       case Success(token) => {
         logger.info(s"unregister: ${token}")
         ws.url(unregisterUrl)
-          .addHttpHeaders(AUTH_TOKEN_HEADER -> token)
+          .addHttpHeaders(TokenAuthorizationFilter.AUTH_TOKEN_HEADER -> token)
           .withRequestTimeout(10000.millis)
           .post("")
           .map { response =>
@@ -115,28 +117,6 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
     }
   }
 
-  private def readTranstypes: Seq[String] = {
-    val available = mutable.Buffer[String]()
-    val reader = XMLInputFactory
-      .newInstance()
-      .createXMLStreamReader(getClass.getResourceAsStream("/plugins.xml"))
-    while (reader.hasNext) {
-      reader.next() match {
-        case XMLStreamConstants.START_ELEMENT if reader.getLocalName == "transtype" =>
-          available += reader.getAttributeValue(XMLConstants.NULL_NS_URI, "name")
-        case _ =>
-      }
-    }
-    val transtypes = configuration.get[Seq[String]]("worker.transtypes")
-    transtypes
-      .find(transtype => !available.contains(transtype))
-      .foreach(
-        transtype =>
-          throw new IllegalArgumentException(s"Configured transtype not available: ${transtype}")
-      )
-    transtypes
-  }
-
   override def status: ConversionStatus = currentStatus
 
   /**
@@ -149,7 +129,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         val request: WSRequest = ws.url(requestUrl)
         logger.debug(s"Get work ${request.uri}")
         val complexRequest: WSRequest = request
-          .addHttpHeaders("Accept" -> "application/json", AUTH_TOKEN_HEADER -> token)
+          .addHttpHeaders("Accept" -> "application/json", TokenAuthorizationFilter.AUTH_TOKEN_HEADER -> token)
           .withRequestTimeout(10000.millis)
         val res: Future[Try[Task]] = complexRequest
           .post(Json.toJson(transtypes))
@@ -235,7 +215,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
 
           val request: WSRequest = ws.url(submitUrl)
           val complexRequest: WSRequest = request
-            .addHttpHeaders(AUTH_TOKEN_HEADER -> token)
+            .addHttpHeaders(TokenAuthorizationFilter.AUTH_TOKEN_HEADER -> token)
             .withRequestTimeout(10000.millis)
           logger.debug(s"Submit ${otRes.job.id} results to queue")
           complexRequest
