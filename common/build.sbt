@@ -1,5 +1,6 @@
+organization := "com.elovirta.kuhnuri"
 
-name := """com.elovirta.kuhnuri.worker.common"""
+name := """worker-common"""
 
 version := "1.0-SNAPSHOT"
 

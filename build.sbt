@@ -1,6 +1,8 @@
 import org.dita.dost.platform.Integrator
 
-name := """com.elovirta.kuhnuri.worker"""
+organization := "com.elovirta.kuhnuri"
+
+name := """worker"""
 
 version := "1.0-SNAPSHOT"
 
