@@ -47,6 +47,9 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
 
   private def getProcessOutputDir(job: Task): URI = URI.create(job.input + ".zip")
 
+  /**
+    * Download input resource into temporary location
+    */
   def download(job: Task): Future[Try[Work]] = Future {
     logger.debug(s"Download: " + job)
     try {
@@ -60,15 +63,16 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         case "s3" => {
           val (bucket, key) = S3Utils.parse(input)
           val file = key.split("/").last
-          val tempFile = Paths.get(baseTemp.getAbsolutePath, file)
+          val tempInputFile = Paths.get(baseTemp.getAbsolutePath, "input", file)
+          val tempOutputFile = Paths.get(baseTemp.getAbsolutePath, "output", file)
           try {
             logger.info(s"Download ${input}")
             val req = new GetObjectRequest(bucket, key)
             val s3Object = s3.getObject(req)
-            Files.copy(s3Object.getObjectContent(), tempFile, REPLACE_EXISTING)
+            Files.copy(s3Object.getObjectContent(), tempInputFile, REPLACE_EXISTING)
             Success(Work(
-              tempFile.toUri,
-              URI.create(job.output),
+              tempInputFile.toUri,
+              tempOutputFile.toUri,
               job))
           } catch {
             case ase: AmazonServiceException => {
@@ -151,12 +155,17 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
     None
   }
 
+  /**
+    * Upload temporary resource into output
+    */
   def upload(tryTask: Try[Work]): Future[Try[Work]] = Future {
     logger.debug(s"Upload: " + tryTask)
     tryTask match {
       case Success(work) => try {
-        work.output.getScheme match {
-          case "file" if !work.output.getPath.endsWith("/") => {
+        val tempOutput = work.output
+        val output = URI.create(work.task.output)
+        output.getScheme match {
+          case "file" if !output.getPath.endsWith("/") => {
             logger.info(s"Already generated output to ${work.output} directory")
 //            if (output != work.output) {
 //              throw new IllegalArgumentException(s"Output directory ${work.output} should match ${output}")
@@ -164,10 +173,10 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
             Success(work)
           }
           case "s3" => {
-            val (bucket, key) = S3Utils.parse(work.output)
+            val (bucket, key) = S3Utils.parse(output)
             try {
-              logger.info(s"Upload ${work.input} to ${work.output}")
-              val req = new PutObjectRequest(bucket, key, new File(work.input))
+              logger.info(s"Upload ${tempOutput} to ${output}")
+              val req = new PutObjectRequest(bucket, key, new File(tempOutput))
               s3.putObject(req)
               Success(work)
             } catch {

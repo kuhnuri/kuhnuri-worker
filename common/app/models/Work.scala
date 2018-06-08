@@ -7,6 +7,10 @@ import play.api.libs.json._
 
 /**
   * Work item for a task.
+  *
+  * @param input  temporary input resource
+  * @param output temporary output resource
+  * @param task   task to process
   */
 sealed case class Work(input: URI, output: URI, task: Task)
 
@@ -20,10 +24,10 @@ object Work {
     ) (unlift(Work.unapply _))
 
   implicit val uriReads = Reads[URI](j => try {
-      JsSuccess(new URI(j.as[JsString].value))
-    } catch {
-      case e: URISyntaxException  => JsError(e.toString)
-    })
+    JsSuccess(new URI(j.as[JsString].value))
+  } catch {
+    case e: URISyntaxException => JsError(e.toString)
+  })
 
   implicit val taskReads: Reads[Work] = (
     (JsPath \ "input").read[URI] and
