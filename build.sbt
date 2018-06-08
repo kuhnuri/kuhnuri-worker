@@ -78,7 +78,7 @@ stage := {
       List(line)
     }
   })
-  IO.writeLines(shellFile, shellLines)
+  IO.write(shellFile, shellLines.mkString("\n"))
 
   val cmdFile = stageDir / "bin" / "worker.bat"
   val cmdLines = IO.readLines(cmdFile).flatMap(line => {
