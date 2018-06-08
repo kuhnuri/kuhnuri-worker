@@ -112,15 +112,15 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
     }
   }
 
-  private def getError(e: Throwable): Option[java.lang.Error] = {
-    if (e.isInstanceOf[java.lang.Error]) {
-      return Some(e.asInstanceOf[java.lang.Error])
-    }
-    if (e.getCause != null) {
-      return getError(e.getCause)
-    }
-    None
-  }
+//  private def getError(e: Throwable): Option[java.lang.Error] = {
+//    if (e.isInstanceOf[java.lang.Error]) {
+//      return Some(e.asInstanceOf[java.lang.Error])
+//    }
+//    if (e.getCause != null) {
+//      return getError(e.getCause)
+//    }
+//    None
+//  }
 
   private def getProcessor(task: Work): Processor = {
     val processorFactory = ProcessorFactory.newInstance(ditaDir)

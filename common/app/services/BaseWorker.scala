@@ -141,15 +141,15 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
 //    }
 //  }
 
-//  private def getError(e: Throwable): Option[java.lang.Error] = {
-//    if (e.isInstanceOf[java.lang.Error]) {
-//      return Some(e.asInstanceOf[java.lang.Error])
-//    }
-//    if (e.getCause != null) {
-//      return getError(e.getCause)
-//    }
-//    None
-//  }
+  protected def getError(e: Throwable): Option[java.lang.Error] = {
+    if (e.isInstanceOf[java.lang.Error]) {
+      return Some(e.asInstanceOf[java.lang.Error])
+    }
+    if (e.getCause != null) {
+      return getError(e.getCause)
+    }
+    None
+  }
 
   def upload(tryTask: Try[Work]): Future[Try[Work]] = Future {
     logger.debug(s"Upload: " + tryTask)
