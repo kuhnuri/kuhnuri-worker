@@ -64,7 +64,7 @@ stage := {
   ))
 
   log.debug("Rewrite launch scripts")
-  val shellFile = stageDir / "bin" / "com-elovirta-kuhnuri-worker"
+  val shellFile = stageDir / "bin" / "worker"
   val shellLines = IO.readLines(shellFile).flatMap(line => {
     if (line.contains("app_classpath=")) {
       List(
@@ -80,11 +80,11 @@ stage := {
   })
   IO.writeLines(shellFile, shellLines)
 
-  val cmdFile = stageDir / "bin" / "com-elovirta-kuhnuri-worker.bat"
+  val cmdFile = stageDir / "bin" / "worker.bat"
   val cmdLines = IO.readLines(cmdFile).flatMap(line => {
     if (line.contains("APP_CLASSPATH=")) {
       List(
-        "set \"DITA_HOME=%COM_ELOVIRTA_KUHNURI_WORKER_HOME%\"",
+        "set \"DITA_HOME=%WORKER_HOME%\"",
         "set \"CLASSPATH=\"",
         "call \"%APP_LIB_DIR%\\..\\config\\env.bat\"",
         line.replace("APP_CLASSPATH=", "APP_CLASSPATH=%CLASSPATH%;")
