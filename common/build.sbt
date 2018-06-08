@@ -17,6 +17,7 @@ libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test"
 //libraryDependencies += "org.apache.ant" % "ant" % "1.10.2"
 //libraryDependencies += "org.dita-ot" % "dost" % "3.0.3"
+libraryDependencies += "com.amazonaws" % "aws-java-sdk" % "1.9.6"
 
 sources in (Compile, doc) := Seq.empty
 
