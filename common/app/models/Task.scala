@@ -18,10 +18,8 @@ import play.api.libs.json._
   */
 sealed case class Task(id: String,
                        job: String,
-                       // this is option is queue
-                       input: String,
-                       // this is option is queue
-                       output: String,
+                       input: Option[String],
+                       output: Option[String],
                        transtype: String,
                        params: Map[String, String],
                        status: StatusString,
@@ -47,8 +45,8 @@ object Task {
   implicit val taskWrites: Writes[Task] = (
     (JsPath \ "id").write[String] and
       (JsPath \ "job").write[String] and
-      (JsPath \ "input").write[String] and
-      (JsPath \ "output").write[String] and
+      (JsPath \ "input").writeNullable[String] and
+      (JsPath \ "output").writeNullable[String] and
       (JsPath \ "transtype").write[String] and
       (JsPath \ "params").write[Map[String, String]] and
       (JsPath \ "status").write[StatusString] and
@@ -59,8 +57,8 @@ object Task {
   implicit val taskReads: Reads[Task] = (
     (JsPath \ "id").read[String] and
       (JsPath \ "job").read[String] and
-      (JsPath \ "input").read[String] /*.filter(new URI(_).isAbsolute)*/ and
-      (JsPath \ "output").read[String] /*.filter(_.map {
+      (JsPath \ "input").readNullable[String] /*.filter(new URI(_).isAbsolute)*/ and
+      (JsPath \ "output").readNullable[String] /*.filter(_.map {
         new URI(_).isAbsolute
       }.getOrElse(true))*/ and
       (JsPath \ "transtype").read[String] and

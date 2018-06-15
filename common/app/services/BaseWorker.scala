@@ -45,20 +45,20 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
 //    case Failure(e) => Future(Failure(e))
 //  }
 
-  private def getProcessOutputDir(job: Task): URI = URI.create(job.input + ".zip")
+  private def getProcessOutputDir(task: Task): URI = task.input.map(input => URI.create(input + ".zip")).get
 
   /**
     * Download input resource into temporary location
     */
-  def download(job: Task): Future[Try[Work]] = Future {
-    logger.debug(s"Download: " + job)
+  def download(task: Task): Future[Try[Work]] = Future {
+    logger.debug(s"Download: " + task)
     try {
-      val input = URI.create(job.input)
+      val input = URI.create(task.input.get)
       logger.info(s"Input URI ${input} scheme ${input.getScheme}")
       input.getScheme match {
         case "file" if !input.getPath.endsWith("/") => {
-          logger.info(s"Read source directly from " + job.input)
-          Success(Work(URI.create(job.input), getProcessOutputDir(job), job))
+          logger.info(s"Read source directly from " + task.input)
+          Success(Work(URI.create(task.input.get), getProcessOutputDir(task), task))
         }
         case "s3" => {
           val (bucket, key) = S3Utils.parse(input)
@@ -73,7 +73,7 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
             Success(Work(
               tempInputFile.toUri,
               tempOutputFile.toUri,
-              job))
+              task))
           } catch {
             case ase: AmazonServiceException => {
               logger.error("Caught an AmazonServiceException, which means your request made it to Amazon S3, but was rejected with an error response for some reason.");
@@ -93,12 +93,12 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         }
         case scheme =>
           logger.warn(s"Input URI scheme ${scheme} not supported");
-          Failure(new ProcessorException(new IllegalArgumentException(s"Input URI scheme ${scheme} not supported"), job))
+          Failure(new ProcessorException(new IllegalArgumentException(s"Input URI scheme ${scheme} not supported"), task))
       }
     } catch {
       case e: Exception =>
-        //        e.printStackTrace();
-        Failure(new ProcessorException(e, job))
+                e.printStackTrace();
+        Failure(new ProcessorException(e, task))
     }
   }
 
@@ -163,45 +163,53 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
     tryTask match {
       case Success(work) => try {
         val tempOutput = work.output
-        val output = URI.create(work.task.output)
-        output.getScheme match {
-          case "file" if !output.getPath.endsWith("/") => {
-            logger.info(s"Already generated output to ${work.output} directory")
-//            if (output != work.output) {
-//              throw new IllegalArgumentException(s"Output directory ${work.output} should match ${output}")
-//            }
-            Success(work)
-          }
-          case "s3" => {
-            val (bucket, key) = S3Utils.parse(output)
-            try {
-              logger.info(s"Upload ${tempOutput} to ${output}")
-              val req = new PutObjectRequest(bucket, key, new File(tempOutput))
-              s3.putObject(req)
-              Success(work)
-            } catch {
-              case ase: AmazonServiceException => {
-                logger.error("Caught an AmazonServiceException, which means your request made it to Amazon S3, but was rejected with an error response for some reason.");
-                logger.error("Error Message:    " + ase.getMessage());
-                logger.error("HTTP Status Code: " + ase.getStatusCode());
-                logger.error("AWS Error Code:   " + ase.getErrorCode());
-                logger.error("Error Type:       " + ase.getErrorType());
-                logger.error("Request ID:       " + ase.getRequestId());
-                Failure(ase)
+        work.task.output match {
+          case Some(taskOutput) => {
+            val output = URI.create(taskOutput)
+            output.getScheme match {
+              case "file" if !output.getPath.endsWith("/") => {
+                logger.info(s"Already generated output to ${work.output} directory")
+                //            if (output != work.output) {
+                //              throw new IllegalArgumentException(s"Output directory ${work.output} should match ${output}")
+                //            }
+                Success(work)
               }
-              case ace: AmazonClientException => {
-                logger.error("Caught an AmazonClientException, which means the client encountered a serious internal problem while trying to communicate with S3, such as not being able to access the network.");
-                logger.error("Error Message: " + ace.getMessage())
-                Failure(ace)
+              case "s3" => {
+                val (bucket, key) = S3Utils.parse(output)
+                try {
+                  logger.info(s"Upload ${tempOutput} to ${output}")
+                  val req = new PutObjectRequest(bucket, key, new File(tempOutput))
+                  s3.putObject(req)
+                  Success(work)
+                } catch {
+                  case ase: AmazonServiceException => {
+                    logger.error("Caught an AmazonServiceException, which means your request made it to Amazon S3, but was rejected with an error response for some reason.");
+                    logger.error("Error Message:    " + ase.getMessage());
+                    logger.error("HTTP Status Code: " + ase.getStatusCode());
+                    logger.error("AWS Error Code:   " + ase.getErrorCode());
+                    logger.error("Error Type:       " + ase.getErrorType());
+                    logger.error("Request ID:       " + ase.getRequestId());
+                    Failure(ase)
+                  }
+                  case ace: AmazonClientException => {
+                    logger.error("Caught an AmazonClientException, which means the client encountered a serious internal problem while trying to communicate with S3, such as not being able to access the network.");
+                    logger.error("Error Message: " + ace.getMessage())
+                    Failure(ace)
+                  }
+                }
               }
+              case _ =>
+                throw new IllegalArgumentException(s"Upload target ${work.output} not supported")
             }
           }
-          case _ =>
-            throw new IllegalArgumentException(s"Upload target ${work.output} not supported")
+          case None => {
+            logger.debug("Task has no output")
+            Success(work)
+          }
         }
       } catch {
         case e: Exception =>
-          //          e.printStackTrace();
+                    e.printStackTrace();
           Failure(new ProcessorException(e, work.task))
       }
       case f => f
