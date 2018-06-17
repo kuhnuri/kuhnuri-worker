@@ -1,5 +1,6 @@
-package models
+package models.request
 
+import models.Task
 import play.api.libs.functional.syntax.{unlift, _}
 import play.api.libs.json._
 

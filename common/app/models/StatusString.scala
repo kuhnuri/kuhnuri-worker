@@ -30,14 +30,14 @@ object StatusString {
     case s: String => throw new IllegalArgumentException(s"Unsupported status value: ${s}")
   }
 
-  implicit val jobStatusStringReads: Reads[StatusString] =
+  implicit val jobStatusStringReads =
     Reads[StatusString](j => try {
       JsSuccess(StatusString.parse(j.as[JsString].value))
     } catch {
       case e: IllegalArgumentException => JsError(e.toString)
     })
 
-  implicit val jobStatusStringWrites: Writes[StatusString] =
+  implicit val jobStatusStringWrites =
     Writes[StatusString](s => JsString(s.toString))
 
 }

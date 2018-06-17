@@ -97,7 +97,6 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
       }
     } catch {
       case e: Exception =>
-                e.printStackTrace();
         Failure(new ProcessorException(e, task))
     }
   }
@@ -209,7 +208,6 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         }
       } catch {
         case e: Exception =>
-                    e.printStackTrace();
           Failure(new ProcessorException(e, work.task))
       }
       case f => f

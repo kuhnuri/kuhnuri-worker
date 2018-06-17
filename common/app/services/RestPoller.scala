@@ -8,6 +8,7 @@ import javax.inject.Inject
 import javax.xml.XMLConstants
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
 import models._
+import models.request.{JobResult, Register}
 import play.Environment
 import play.api.http.Status.{NO_CONTENT, OK, UNAUTHORIZED}
 import play.api.libs.json.{JsError, Json}
