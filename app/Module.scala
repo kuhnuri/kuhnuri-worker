@@ -9,6 +9,7 @@ class Module extends AbstractModule {
     bind(classOf[TranstypeConf]).to(classOf[DitaOtTranstypesConf])
     bind(classOf[Poller]).to(classOf[RestPoller]).asEagerSingleton()
     bind(classOf[WorkerService]).to(classOf[SimpleWorkerService]).asEagerSingleton()
+    bind(classOf[S3Client]).to(classOf[S3ClientImpl])
   }
 
 }
