@@ -16,6 +16,7 @@ import scala.util.{Failure, Success, Try}
 
 class DitaOtWorker @Inject()(implicit context: ExecutionContext,
                              ws: WSClient,
+                             s3: S3Client,
                              configuration: Configuration,
                              environment: Environment) extends BaseWorker() {
 
@@ -82,7 +83,7 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
 //    }
 //  }
 
-  private def runDitaOt(jobTry: Try[Work]): Future[Try[Work]] = Future {
+  override def transform(jobTry: Try[Work]): Future[Try[Work]] = Future {
     logger.debug(s"Process: " + jobTry)
     jobTry match {
       case Success(task) => {
@@ -185,17 +186,17 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
 //    }
 //  }
 
-  override def process(tryJob: Try[Task]): Future[Try[Work]] = tryJob match {
-    case Success(job) => {
-      logger.info(s"Got job ${job.id}")
-      for {
-        src <- download(job)
-        otRes <- runDitaOt(src)
-        res <- upload(otRes)
-      } yield res
-    }
-    case Failure(e) => Future(Failure(e))
-  }
+//  override def process(tryJob: Try[Task]): Future[Try[Work]] = tryJob match {
+//    case Success(job) => {
+//      logger.info(s"Got job ${job.id}")
+//      for {
+//        src <- download(job)
+//        otRes <- runDitaOt(src)
+//        res <- upload(otRes)
+//      } yield res
+//    }
+//    case Failure(e) => Future(Failure(e))
+//  }
 
   //  override def run(): Future[Unit] = {
   //    if (shutdownPromise) {

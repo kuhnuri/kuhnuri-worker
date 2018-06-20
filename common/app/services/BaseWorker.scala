@@ -31,17 +31,17 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
 
   var stopHook: Option[() => Unit] = None
 
-//  override def process(tryJob: Try[Task]): Future[Try[Work]] = tryJob match {
-//    case Success(job) => {
-//      logger.info(s"Got job ${job.id}")
-//      for {
-//        src <- download(job)
-//        otRes <- runDitaOt(src)
-//        res <- upload(otRes)
-//      } yield res
-//    }
-//    case Failure(e) => Future(Failure(e))
-//  }
+  override def process(tryJob: Try[Task]): Future[Try[Work]] = tryJob match {
+    case Success(job) => {
+      logger.info(s"Got job ${job.id}")
+      for {
+        src <- download(job)
+        otRes <- transform(src)
+        res <- upload(otRes)
+      } yield res
+    }
+    case Failure(e) => Future(Failure(e))
+  }
 
   private def getProcessOutputDir(task: Task): URI = task.input.map(input => URI.create(input + ".zip")).get
 
@@ -78,6 +78,8 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         Failure(new ProcessorException(e, task))
     }
   }
+
+  def transform(jobTry: Try[Work]): Future[Try[Work]]
 
 //  private def runDitaOt(jobTry: Try[Work]): Future[Try[Work]] = Future {
 //    logger.debug(s"Process: " + jobTry)
