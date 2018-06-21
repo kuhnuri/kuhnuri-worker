@@ -133,8 +133,8 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
     //    assert(cacheListener.messages.isEmpty)
     cacheListener.messages.clear()
     processor.setLogger(cacheListener)
-    processor.setInput(task.input)
-    processor.setOutputDir(new File(task.output))
+    processor.setInput(task.input.toFile)
+    processor.setOutputDir(task.output.toFile)
     processor.setProperty("clean.temp", "false")
     processor.setProperty("dita.temp.dir", tempDir.getAbsolutePath)
     processor

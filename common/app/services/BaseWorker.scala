@@ -2,8 +2,7 @@ package services
 
 import java.io.File
 import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.file.{Files, Path, Paths}
 
 import javax.inject.Inject
 import models.{Task, Work}
@@ -39,7 +38,10 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
     case Failure(e) => Future(Failure(e))
   }
 
-  private def getProcessOutputDir(task: Task): URI = task.input.map(input => URI.create(input + ".zip")).get
+  private def getProcessOutputDir(task: Task): Path =
+    task.input
+      .map(input => Paths.get(URI.create(input + ".zip")))
+      .get
 
   /**
     * Download input resource into temporary location
@@ -52,7 +54,10 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
       input.getScheme match {
         case "file" if !input.getPath.endsWith("/") => {
           logger.info(s"Read source directly from " + task.input)
-          Success(Work(URI.create(task.input.get), getProcessOutputDir(task), task))
+          Success(Work(
+            Paths.get(URI.create(task.input.get)),
+            getProcessOutputDir(task), task
+          ))
         }
         case "s3" => {
           val tempDir = Paths.get(baseTemp.getAbsolutePath, s"${task.id}_${System.currentTimeMillis()}")
@@ -64,8 +69,8 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
                 Files.createDirectories(tempOutputFile.getParent)
               }
               Work(
-                tempInputFile.toUri,
-                tempOutputFile.toUri,
+                tempInputFile,
+                tempOutputFile,
                 task)
             })
         }
@@ -98,7 +103,6 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
     logger.debug(s"Upload: " + tryTask)
     tryTask match {
       case Success(work) => try {
-        val tempOutput = work.output
         work.task.output match {
           case Some(taskOutput) => {
             val output = URI.create(taskOutput)
@@ -111,8 +115,7 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
                 Success(work)
               }
               case "s3" => {
-                val tmp = new File(tempOutput).toPath
-                s3.upload(tmp, output)
+                s3.upload(work.output, output)
                   .map(_ => {
                     work
                   })
