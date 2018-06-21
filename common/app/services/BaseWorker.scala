@@ -2,6 +2,7 @@ package services
 
 import java.io.File
 import java.net.URI
+import java.nio.file.Files
 //import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.nio.file.Paths
 
@@ -38,6 +39,7 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         src <- download(job)
         otRes <- transform(src)
         res <- upload(otRes)
+        // TODO: Clean up
       } yield res
     }
     case Failure(e) => Future(Failure(e))
@@ -60,9 +62,13 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         }
         case "s3" => {
           val tempDir = Paths.get(baseTemp.getAbsolutePath, s"${task.id}_${System.currentTimeMillis()}")
+          Files.createDirectories(tempDir)
           s3.download(input, tempDir)
             .map(tempInputFile => {
               val tempOutputFile = Paths.get(tempDir.toString, "output", tempInputFile.getFileName.toString)
+              if (!Files.exists(tempOutputFile.getParent)) {
+                Files.createDirectories(tempOutputFile.getParent)
+              }
               Work(
                 tempInputFile.toUri,
                 tempOutputFile.toUri,
