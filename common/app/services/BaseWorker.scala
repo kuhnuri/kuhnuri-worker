@@ -3,19 +3,13 @@ package services
 import java.io.File
 import java.net.URI
 import java.nio.file.Files
-//import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import java.nio.file.Paths
 
-//import com.amazonaws.{AmazonClientException, AmazonServiceException}
-//import com.amazonaws.regions.{Region, Regions}
-//import com.amazonaws.services.s3.model.{GetObjectRequest, PutObjectRequest}
-//import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client}
 import javax.inject.Inject
 import models.{Task, Work}
 import play.Environment
 import play.api.libs.ws.WSClient
 import play.api.{Configuration, Logger}
-//import services.Utils.format
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -87,49 +81,6 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
 
   def transform(jobTry: Try[Work]): Future[Try[Work]]
 
-//  private def runDitaOt(jobTry: Try[Work]): Future[Try[Work]] = Future {
-//    logger.debug(s"Process: " + jobTry)
-//    jobTry match {
-//      case Success(work) => {
-//        try {
-//          logger.info(s"Running graphics conversion: " + work)
-//          val start = System.currentTimeMillis()
-//
-//          val file = new File(work.input)
-//          logger.info(s"Open r+w ${work.input}")
-//          logger.info("For each entry")
-//          logger.info("  If entry is PDF")
-//          logger.info("    Convert entry to PNG")
-//          logger.info("    Save PNG to ZIP")
-//          logger.info("Close ZIP")
-//
-//          val end = System.currentTimeMillis()
-//          logger.info(s"Process took ${format(end - start)}")
-//
-//          // FIXME
-//          val output = URI.create("s3://" + "xdoccont-data-prod" + "/" + "wnc/temp/" + file.getName)
-//
-//          val res = work.copy(
-//            task = work.task.copy(status = StatusString.Done),
-//            output = output
-//          )
-//          Success(res)
-//        } catch {
-//          case e: Throwable if getError(e).isDefined => {
-//            logger.debug("Error in runDitaOt: " + e.getMessage, e)
-//            stopHook.foreach(callback => callback())
-//            throw getError(e).get
-//          }
-//          case e: Exception => {
-//            val res = work.task.copy(status = StatusString.Error)
-//            Failure(new ProcessorException(e, res))
-//          }
-//        }
-//      }
-//      case f => f
-//    }
-//  }
-
   protected def getError(e: Throwable): Option[java.lang.Error] = {
     if (e.isInstanceOf[java.lang.Error]) {
       return Some(e.asInstanceOf[java.lang.Error])
@@ -165,28 +116,6 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
                   .map(_ => {
                     work
                   })
-//                val (bucket, key) = S3Utils.parse(output)
-//                try {
-//                  logger.info(s"Upload ${tempOutput} to ${output}")
-//                  val req = new PutObjectRequest(bucket, key, new File(tempOutput))
-//                  s3.putObject(req)
-//                  Success(work)
-//                } catch {
-//                  case ase: AmazonServiceException => {
-//                    logger.error("Caught an AmazonServiceException, which means your request made it to Amazon S3, but was rejected with an error response for some reason.");
-//                    logger.error("Error Message:    " + ase.getMessage());
-//                    logger.error("HTTP Status Code: " + ase.getStatusCode());
-//                    logger.error("AWS Error Code:   " + ase.getErrorCode());
-//                    logger.error("Error Type:       " + ase.getErrorType());
-//                    logger.error("Request ID:       " + ase.getRequestId());
-//                    Failure(ase)
-//                  }
-//                  case ace: AmazonClientException => {
-//                    logger.error("Caught an AmazonClientException, which means the client encountered a serious internal problem while trying to communicate with S3, such as not being able to access the network.");
-//                    logger.error("Error Message: " + ace.getMessage())
-//                    Failure(ace)
-//                  }
-//                }
               }
               case _ =>
                 throw new IllegalArgumentException(s"Upload target ${work.output} not supported")
