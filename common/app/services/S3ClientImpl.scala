@@ -29,6 +29,9 @@ class S3ClientImpl @Inject()(configuration: Configuration) extends S3Client {
     val (bucket, key) = S3Utils.parse(input)
     val file = key.split("/").last
     val tempInputFile = Paths.get(dir.toString, "input", file)
+    if (!Files.exists(tempInputFile.getParent)) {
+      Files.createDirectories(tempInputFile.getParent)
+    }
 //    val tempOutputFile = Paths.get(baseTemp.getAbsolutePath, "output", file)
     try {
       logger.info(s"Download ${input}")
