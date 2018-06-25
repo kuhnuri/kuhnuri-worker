@@ -20,8 +20,6 @@ trait Poller {
 
 }
 
-
-
 private case class NoWorkException() extends Exception()
 
 private case class UnauthorizedException(msg: String) extends Exception(msg)
