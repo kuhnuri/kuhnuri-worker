@@ -40,7 +40,7 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
               val zipFile = new File(zip)
               val inputDir = new File(tempDir, "input")
               Utils.unzip(zipFile, inputDir)
-              new File(tempDir.toURI.resolve(path.getPath))
+              new File(inputDir.toURI.resolve(path.getPath))
             }
             case "file" => new File(work.input)
             case _ => throw new IllegalArgumentException(s"Unsupported input URI scheme: ${work.input}")
