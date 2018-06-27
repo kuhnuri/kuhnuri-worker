@@ -2,7 +2,7 @@ package services
 
 import java.io.File
 import java.net.URI
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 import javax.inject.Inject
 import models.{Task, Work}
@@ -38,25 +38,23 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
     case Failure(e) => Future(Failure(e))
   }
 
-  private def getProcessOutputDir(task: Task): Path =
+  private def getProcessOutputDir(task: Task): URI =
     task.input
-      .map(input => Paths.get(URI.create(input + ".zip")))
+      .map(input => URI.create(input + ".zip"))
       .get
 
   /**
     * Download input resource into temporary location
     */
-  def download(task: Task): Future[Try[Work]] = Future {
-    logger.debug(s"Download: " + task)
-    try {
-      val input = URI.create(task.input.get)
-      logger.info(s"Input URI ${input} scheme ${input.getScheme}")
+  def download(task: Task): Future[Try[Work]] = {
+    def downloadResource(input: URI): Try[Work] = {
       input.getScheme match {
         case "file" if !input.getPath.endsWith("/") => {
           logger.info(s"Read source directly from " + task.input)
           Success(Work(
-            Paths.get(URI.create(task.input.get)),
-            getProcessOutputDir(task), task
+            URI.create(task.input.get),
+            getProcessOutputDir(task),
+            task
           ))
         }
         case "s3" => {
@@ -69,18 +67,36 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
                 Files.createDirectories(tempOutputFile.getParent)
               }
               Work(
-                tempInputFile,
-                tempOutputFile,
+                tempInputFile.toUri,
+                tempOutputFile.toUri,
                 task)
             })
+        }
+        case "jar" => {
+          val (resource, path) = Utils.parse(input)
+          downloadResource(resource)
+            .map { work =>
+              work.copy(
+                input = URI.create("jar:" + work.input + "!" + path)
+              )
+            }
         }
         case scheme =>
           logger.warn(s"Input URI scheme ${scheme} not supported");
           Failure(new ProcessorException(new IllegalArgumentException(s"Input URI scheme ${scheme} not supported"), task))
       }
-    } catch {
-      case e: Exception =>
-        Failure(new ProcessorException(e, task))
+    }
+
+    Future {
+      logger.debug(s"Download: " + task)
+      try {
+        val input = URI.create(task.input.get)
+        logger.info(s"Input URI ${input} scheme ${input.getScheme}")
+        downloadResource(input)
+      } catch {
+        case e: Exception =>
+          Failure(new ProcessorException(e, task))
+      }
     }
   }
 
@@ -99,41 +115,50 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
   /**
     * Upload temporary resource into output
     */
-  def upload(tryTask: Try[Work]): Future[Try[Work]] = Future {
-    logger.debug(s"Upload: " + tryTask)
-    tryTask match {
-      case Success(work) => try {
-        work.task.output match {
-          case Some(taskOutput) => {
-            val output = URI.create(taskOutput)
-            output.getScheme match {
-              case "file" if !output.getPath.endsWith("/") => {
-                logger.info(s"Already generated output to ${work.output} directory")
-                //            if (output != work.output) {
-                //              throw new IllegalArgumentException(s"Output directory ${work.output} should match ${output}")
-                //            }
-                Success(work)
-              }
-              case "s3" => {
-                s3.upload(work.output, output)
-                  .map(_ => {
-                    work
-                  })
-              }
-              case _ =>
-                throw new IllegalArgumentException(s"Upload target ${work.output} not supported")
+  def upload(tryTask: Try[Work]): Future[Try[Work]] = {
+    def uploadResource(work: Work, output: URI): Try[Work] = {
+      output.getScheme match {
+        case "file" if !output.getPath.endsWith("/") => {
+          logger.info(s"Already generated output to ${work.output} directory")
+          //            if (output != work.output) {
+          //              throw new IllegalArgumentException(s"Output directory ${work.output} should match ${output}")
+          //            }
+          Success(work)
+        }
+        case "s3" => {
+          assert(work.output.getScheme == "file")
+          s3.upload(Paths.get(work.output), output)
+            .map(_ => work)
+        }
+        case "jar" => {
+          val (resource, _) = Utils.parse(output)
+          uploadResource(work, resource)
+        }
+        case _ =>
+          throw new IllegalArgumentException(s"Upload target ${work.output} not supported")
+      }
+    }
+
+    Future {
+      logger.debug(s"Upload: " + tryTask)
+      tryTask match {
+        case Success(work) => try {
+          work.task.output match {
+            case Some(taskOutput) => {
+              val output = URI.create(taskOutput)
+              uploadResource(work, output)
+            }
+            case None => {
+              logger.debug("Task has no output")
+              Success(work)
             }
           }
-          case None => {
-            logger.debug("Task has no output")
-            Success(work)
-          }
+        } catch {
+          case e: Exception =>
+            Failure(new ProcessorException(e, work.task))
         }
-      } catch {
-        case e: Exception =>
-          Failure(new ProcessorException(e, work.task))
+        case f => f
       }
-      case f => f
     }
   }
 
