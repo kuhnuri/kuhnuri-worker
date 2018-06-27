@@ -27,14 +27,17 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG"/>
 
+  <logger name="services.BaseWorker" level="INFO">
+    <appender-ref ref="ASYNCFILE" />
+  </logger>
   <logger name="services.DitaOtWorker" level="INFO">
-    <appender-ref ref="STDOUT" />
+    <appender-ref ref="ASYNCFILE" />
   </logger>
   <logger name="services.RestPoller" level="DEBUG">
-    <appender-ref ref="STDOUT" />
+    <appender-ref ref="ASYNCFILE" />
   </logger>
   <logger name="services.SimpleWorkerService" level="DEBUG">
-    <appender-ref ref="STDOUT" />
+    <appender-ref ref="ASYNCFILE" />
   </logger>
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
