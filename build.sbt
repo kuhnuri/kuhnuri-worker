@@ -23,7 +23,7 @@ libraryDependencies += filters
 libraryDependencies += guice
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test"
 libraryDependencies += "org.apache.ant" % "ant" % "1.10.2"
-libraryDependencies += "org.dita-ot" % "dost" % "3.0.3"
+libraryDependencies += "org.dita-ot" % "dost" % "3.1"
 libraryDependencies += "com.amazonaws" % "aws-java-sdk" % "1.9.6"
 
 sources in (Compile, doc) := Seq.empty
@@ -65,13 +65,16 @@ stage := {
   ))
 
   log.debug("Rewrite launch scripts")
+  val ditaLibs = (ditaOtDir / s"dita-ot-$ditaOtVersion" / "lib").listFiles.filter(_.getName.endsWith(".jar"))
+
   val shellFile = stageDir / "bin" / "worker"
   val shellLines = IO.readLines(shellFile).flatMap(line => {
     if (line.contains("app_classpath=")) {
+      val classpath: String = ditaLibs.map(lib => "$lib_dir/" + lib.getName).mkString(":")
       List(
         "declare -x -r DITA_HOME=\"$(realpath \"${app_home}/../\")\"",
         "unset CLASSPATH",
-        "declare -x CLASSPATH",
+        "declare -x CLASSPATH=\"" + classpath + "\"",
         "source \"$lib_dir/../config/env.sh\"",
         line.replace("app_classpath=\"", "app_classpath=\"$CLASSPATH:$lib_dir/../config/:")
       )
@@ -84,9 +87,10 @@ stage := {
   val cmdFile = stageDir / "bin" / "worker.bat"
   val cmdLines = IO.readLines(cmdFile).flatMap(line => {
     if (line.contains("APP_CLASSPATH=")) {
+      val classpath: String = ditaLibs.map(lib => "%APP_LIB_DIR%\\" + lib.getName).mkString(";")
       List(
         "set \"DITA_HOME=%WORKER_HOME%\"",
-        "set \"CLASSPATH=\"",
+        "set \"CLASSPATH=" + classpath + "\"",
         "call \"%APP_LIB_DIR%\\..\\config\\env.bat\"",
         line.replace("APP_CLASSPATH=", "APP_CLASSPATH=%CLASSPATH%;%APP_LIB_DIR%\\..\\config\\;")
       )
