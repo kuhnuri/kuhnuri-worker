@@ -50,7 +50,9 @@ stage := {
       .filter(_.endsWith(".jar"))
       .filter(file => ignoreLibs.exists(ignore => file.contains(ignore)))
       .foreach(file => IO.delete(stageDir / "lib" / file))
-    s"chmod 755 ${stageDir / "bin" / "dita" getAbsolutePath}" !
+    if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+      s"chmod 755 ${stageDir / "bin" / "dita" getAbsolutePath}" !
+    }
   } else {
     log.debug("Path exists, no need to download.")
   }
