@@ -35,7 +35,7 @@ stage := {
   val log = streams.value.log
 
   val stageDir = stage.value
-  val ditaOtVersion = System.getProperty("dita-ot.version", "3.0.3")
+  val ditaOtVersion = System.getProperty("dita-ot.version", "3.1")
   log.info(s"DITA-OT version: $ditaOtVersion")
 
   val ditaOtDir = baseDirectory.value / "target" / "universal" / "tmp" / "dita-ot"
@@ -73,7 +73,7 @@ stage := {
         "unset CLASSPATH",
         "declare -x CLASSPATH",
         "source \"$lib_dir/../config/env.sh\"",
-        line.replace("app_classpath=\"", "app_classpath=\"$CLASSPATH:")
+        line.replace("app_classpath=\"", "app_classpath=\"$CLASSPATH:$lib_dir/../config/:")
       )
     } else {
       List(line)
@@ -88,7 +88,7 @@ stage := {
         "set \"DITA_HOME=%WORKER_HOME%\"",
         "set \"CLASSPATH=\"",
         "call \"%APP_LIB_DIR%\\..\\config\\env.bat\"",
-        line.replace("APP_CLASSPATH=", "APP_CLASSPATH=%CLASSPATH%;")
+        line.replace("APP_CLASSPATH=", "APP_CLASSPATH=%CLASSPATH%;%APP_LIB_DIR%\\..\\config\\;")
       )
     } else {
       List(line)
