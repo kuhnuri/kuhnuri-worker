@@ -33,25 +33,24 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
         try {
           val start = System.currentTimeMillis()
 
-          val tempDir = new File(baseTemp, s"${work.task.id}_${System.currentTimeMillis()}")
           val inputFile = work.input.getScheme match {
             case "jar" => {
               val (zip, path) = Utils.parse(work.input)
               val zipFile = new File(zip)
-              val inputDir = new File(tempDir, "input")
+              val inputDir = work.temp.resolve("input").toFile
               Utils.unzip(zipFile, inputDir)
               new File(inputDir.toURI.resolve(path.getPath))
             }
             case "file" => new File(work.input)
             case _ => throw new IllegalArgumentException(s"Unsupported input URI scheme: ${work.input}")
           }
-          val outputDir = new File(tempDir, "output")
+          val outputDir = work.temp.resolve("output").toFile
 
           logger.info(s"Running DITA-OT: " + work)
           val processor = getProcessor(work, inputFile, outputDir)
           processor.run()
 
-          val outputFile = new File(tempDir, work.task.id + ".zip")
+          val outputFile = work.temp.resolve(s"${work.task.id}.zip").toFile
           Utils.zipDir(outputDir, outputFile)
 
           val end = System.currentTimeMillis()
@@ -82,7 +81,7 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
 
   private def getProcessor(task: Work, inputFile: File, outputDir: File): Processor = {
     val processorFactory = ProcessorFactory.newInstance(ditaDir)
-    val tempDir = new File(baseTemp, task.task.id + File.separator + "tmp")
+    val tempDir = task.temp.resolve("tmp").toFile
     processorFactory.setBaseTempDir(tempDir)
 
     val processor = processorFactory.newProcessor(task.task.transtype)

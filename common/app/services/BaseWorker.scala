@@ -48,17 +48,18 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
     */
   def download(task: Task): Future[Try[Work]] = {
     def downloadResource(input: URI): Try[Work] = {
+      val tempDir = baseTemp.toPath.resolve(s"${task.id}_${System.currentTimeMillis()}")
       input.getScheme match {
         case "file" if !input.getPath.endsWith("/") => {
           logger.info(s"Read source directly from " + task.input)
           Success(Work(
             URI.create(task.input.get),
             getProcessOutputDir(task),
-            task
+            task,
+            tempDir
           ))
         }
         case "s3" => {
-          val tempDir = Paths.get(baseTemp.getAbsolutePath, s"${task.id}_${System.currentTimeMillis()}")
           Files.createDirectories(tempDir)
           s3.download(input, tempDir)
             .map(tempInputFile => {
@@ -69,7 +70,9 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
               Work(
                 tempInputFile.toUri,
                 tempOutputFile.toUri,
-                task)
+                task,
+                tempDir
+              )
             })
         }
         case "jar" => {
