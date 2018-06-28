@@ -27,18 +27,25 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG"/>
 
+  <!-- Worker -->
   <logger name="services.BaseWorker" level="INFO">
     <appender-ref ref="ASYNCFILE" />
   </logger>
   <logger name="services.DitaOtWorker" level="INFO">
     <appender-ref ref="ASYNCFILE" />
   </logger>
-  <logger name="services.RestPoller" level="DEBUG">
+  <logger name="services.RestPoller" level="INFO">
     <appender-ref ref="ASYNCFILE" />
   </logger>
-  <logger name="services.SimpleWorkerService" level="DEBUG">
+  <logger name="services.SimpleWorkerService" level="INFO">
     <appender-ref ref="ASYNCFILE" />
   </logger>
+
+  <!-- DITA-OT-->
+  <logger name="FOP" level="INFO"/>
+  <logger name="org.apache.fop" level="INFO"/>
+  <logger name="org.apache.fop.apps.FopConfParser" level="WARN"/>
+  <logger name="org.apache.xmlgraphics" level="INFO"/>
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
