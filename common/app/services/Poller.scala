@@ -25,4 +25,4 @@ private case class NoWorkException() extends Exception()
 private case class UnauthorizedException(msg: String) extends Exception(msg)
 
 private case class UnavailableException(msg: String, cause: Option[Throwable])
-    extends Exception(msg, cause.getOrElse(null))
+  extends Exception(msg, cause.getOrElse(null))

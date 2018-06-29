@@ -4,7 +4,6 @@ import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Paths}
 
-import com.amazonaws.util.IOUtils
 import javax.inject.Inject
 import models.{Task, Work}
 import play.Environment

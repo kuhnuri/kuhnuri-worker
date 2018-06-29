@@ -1,16 +1,14 @@
 package services
 
-import java.io.File
 import java.net.URI
-import java.nio.file.{Files, Path, Paths}
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
+import java.nio.file.{Files, Path, Paths}
 
-import com.amazonaws.{AmazonClientException, AmazonServiceException}
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.model.{GetObjectRequest, PutObjectRequest}
 import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client, AmazonS3URI}
+import com.amazonaws.{AmazonClientException, AmazonServiceException}
 import javax.inject.Inject
-import models.Work
 import play.api.{Configuration, Logger}
 
 import scala.util.{Failure, Success, Try}
@@ -34,17 +32,17 @@ class S3ClientImpl @Inject()(configuration: Configuration) extends S3Client {
     if (!Files.exists(tempInputFile.getParent)) {
       Files.createDirectories(tempInputFile.getParent)
     }
-//    val tempOutputFile = Paths.get(baseTemp.getAbsolutePath, "output", file)
+    //    val tempOutputFile = Paths.get(baseTemp.getAbsolutePath, "output", file)
     try {
       logger.info(s"Download ${input}")
       val req = new GetObjectRequest(bucket, key)
       val s3Object = s3.getObject(req)
       Files.copy(s3Object.getObjectContent(), tempInputFile, REPLACE_EXISTING)
       Success(tempInputFile)
-//      Success(Work(
-//        tempInputFile.toUri,
-//        tempOutputFile.toUri,
-//        task))
+      //      Success(Work(
+      //        tempInputFile.toUri,
+      //        tempOutputFile.toUri,
+      //        task))
     } catch {
       case ase: AmazonServiceException => {
         logger.error("Caught an AmazonServiceException, which means your request made it to Amazon S3, but was rejected with an error response for some reason.");

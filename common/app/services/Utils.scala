@@ -70,7 +70,7 @@ object Utils {
           if (!outFile.getParentFile.exists() && !outFile.getParentFile.mkdirs()) {
             throw new IOException(s"Unable to make directory ${outFile.getParent}")
           }
-//          println((entry.getName, outFile))
+          //          println((entry.getName, outFile))
           val out = new BufferedOutputStream(new FileOutputStream(outFile))
           try {
             var b = zip.read(data, 0, buffer)
@@ -122,6 +122,7 @@ object Utils {
       }
       file.delete()
     }
+
     deleteWalker(tempDir)
   }
 

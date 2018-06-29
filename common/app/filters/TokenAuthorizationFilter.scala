@@ -1,8 +1,7 @@
 package filters
 
-import javax.inject._
-
 import akka.stream.Materializer
+import javax.inject._
 import play.api.Logger
 import play.api.mvc._
 
@@ -10,8 +9,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class TokenAuthorizationFilter @Inject()(
-    implicit override val mat: Materializer,
-    exec: ExecutionContext) extends Filter {
+                                          implicit override val mat: Materializer,
+                                          exec: ExecutionContext) extends Filter {
 
   import TokenAuthorizationFilter._
 

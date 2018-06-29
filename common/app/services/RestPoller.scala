@@ -5,8 +5,6 @@ import java.util.concurrent.TimeoutException
 
 import filters.TokenAuthorizationFilter
 import javax.inject.Inject
-import javax.xml.XMLConstants
-import javax.xml.stream.{XMLInputFactory, XMLStreamConstants}
 import models._
 import models.request.{JobResult, Register}
 import play.Environment
@@ -16,7 +14,6 @@ import play.api.libs.ws.{WSClient, WSRequest}
 import play.api.{Configuration, Logger}
 
 import scala.collection.immutable.List
-import scala.collection.mutable
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -26,23 +23,23 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
                            configuration: Configuration,
                            environment: Environment,
                            transtypeConf: TranstypeConf)
-    extends Poller {
+  extends Poller {
 
   private val logger = Logger(this.getClass)
 
-  private val queueBaseUrl  = configuration.get[String]("queue.url")
-  private val idleDuration  = configuration.getMillis("worker.idle")
-  private val registerUrl   = s"${queueBaseUrl}api/v1/login"
+  private val queueBaseUrl = configuration.get[String]("queue.url")
+  private val idleDuration = configuration.getMillis("worker.idle")
+  private val registerUrl = s"${queueBaseUrl}api/v1/login"
   private val unregisterUrl = s"${queueBaseUrl}api/v1/logout"
-  private val requestUrl    = s"${queueBaseUrl}api/v1/work"
-  private val submitUrl     = s"${queueBaseUrl}api/v1/work"
+  private val requestUrl = s"${queueBaseUrl}api/v1/work"
+  private val submitUrl = s"${queueBaseUrl}api/v1/work"
 
   //  private val workerId      = configuration.get[String]("worker.id")
   private val queueUsername = configuration.get[String]("queue.username")
   private val queuePassword = configuration.get[String]("queue.password")
   private val workerBaseUrl = new URI(configuration.get[String]("worker.url"))
 
-  protected val transtypes                      = transtypeConf.get
+  protected val transtypes = transtypeConf.get
   protected var currentStatus: ConversionStatus = Busy()
   // FIXME What to do here, wait in loop until we can register?
   TokenAuthorizationFilter.authToken = Option.empty //register().toOption
@@ -80,7 +77,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
           }
         }
         .recover {
-          case e @ (_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
+          case e@(_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
             Failure(new UnavailableException("Registration unavailable after timeout", Some(e)))
           case e: Exception =>
             // FIXME: don't throw, return Failure
@@ -169,7 +166,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             }
           }
           .recover {
-            case e @ (_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
+            case e@(_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
               Failure(new UnavailableException(s"Failed to submit: ${e.getMessage}", Some(e)))
             case e: Exception => {
               Failure(new Exception(s"Failed to request: ${e.getMessage}", e))
@@ -189,13 +186,13 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         submitJob(task.task.copy(status = StatusString.Done), res)
       case Failure(ProcessorException(_, job)) =>
         submitJob(job.copy(status = StatusString.Error), res)
-      case f @ Failure(NoWorkException()) =>
+      case f@Failure(NoWorkException()) =>
         Future(f)
-      case f @ Failure(UnauthorizedException(_)) =>
+      case f@Failure(UnauthorizedException(_)) =>
         Future(f)
-      case f @ Failure(UnavailableException(_, _)) =>
+      case f@Failure(UnavailableException(_, _)) =>
         Future(f)
-      case _ @t =>
+      case _@t =>
         throw new IllegalArgumentException("Unknown failure type: " + t.toString)
     }
     //    f.onComplete {
@@ -236,7 +233,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
               //            case e: UnknownHostException => {
               //            case e: ConnectException => {
               case e: Exception => {
-//                e.printStackTrace()
+                //                e.printStackTrace()
                 Failure(new Exception("Failed to submit: " + e.getMessage, e))
               }
             }

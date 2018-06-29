@@ -8,6 +8,7 @@ import play.api.libs.json._
 sealed case class WorkerTask(input: Option[URI], output: Option[URI], retry: Boolean, task: Task)
 
 object WorkerTask {
+
   import models.Task.{taskReads, taskWrites}
 
   implicit val uriWrites: Writes[URI] = Writes { uri => JsString(uri.toString) }
@@ -20,10 +21,10 @@ object WorkerTask {
     ) (unlift(WorkerTask.unapply _))
 
   implicit val uriReads = Reads[URI](j => try {
-      JsSuccess(new URI(j.as[JsString].value))
-    } catch {
-      case e: URISyntaxException  => JsError(e.toString)
-    })
+    JsSuccess(new URI(j.as[JsString].value))
+  } catch {
+    case e: URISyntaxException => JsError(e.toString)
+  })
 
   implicit val workerTaskReads: Reads[WorkerTask] = (
     (JsPath \ "input").readNullable[URI] and

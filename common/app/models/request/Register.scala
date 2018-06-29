@@ -15,6 +15,6 @@ object Register {
     (__ \ "id").write[String] and
       (__ \ "password").write[String] and
       (__ \ "uri").write[URI]
-  )(unlift(Register.unapply _))
+    ) (unlift(Register.unapply _))
 
 }
