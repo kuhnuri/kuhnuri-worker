@@ -90,6 +90,8 @@ object Utils {
     }
   }
 
+  private val jarUriScheme = "jar"
+  private val jarUriSeparator = "!/"
 
   /**
     * Parse JAR URI scheme
@@ -98,18 +100,29 @@ object Utils {
     * @return tuple of resource URI and file path
     */
   def parse(input: URI): (URI, URI) = {
-    val scheme = "jar"
-    val separator = "!/"
 
-    if (input.getScheme != scheme) {
+
+    if (input.getScheme != jarUriScheme) {
       throw new IllegalArgumentException(s"Incorrect JAR URI scheme: ${input}")
     }
     val ssp = input.getSchemeSpecificPart
-    ssp.indexOf(separator) match {
+    ssp.indexOf(jarUriSeparator) match {
       case i if i != -1 => (new URI(ssp.substring(0, i)), new URI(ssp.substring(i + 2)))
       case _ => throw new IllegalArgumentException(s"Invalid JAR URI: ${input}")
     }
+  }
 
+  /**
+    * Create Jar URI
+    */
+  def createJarUri(resource: URI, path: URI): URI = {
+    if (path.isAbsolute || path.getPath == null) {
+      throw new IllegalArgumentException(s"Invalid path URI: ${path}")
+    }
+    if (!resource.isAbsolute) {
+      throw new IllegalArgumentException(s"Invalid resource URI: ${resource}")
+    }
+    URI.create(s"${jarUriScheme}:${resource}${jarUriSeparator}${path}")
   }
 
   /**

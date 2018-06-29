@@ -80,7 +80,7 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
           downloadResource(resource)
             .map { work =>
               work.copy(
-                input = URI.create("jar:" + work.input + "!" + path)
+                input = Utils.createJarUri(work.input, path)
               )
             }
         }

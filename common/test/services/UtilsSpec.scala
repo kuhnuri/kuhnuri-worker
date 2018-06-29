@@ -37,6 +37,26 @@ class UtilsSpec extends FlatSpec with Matchers with BeforeAndAfter {
     }
   }
 
+  "create JAR URI" should "construct valid JAR URI" in {
+    Utils.createJarUri(URI.create("s3://bucket/key"), URI.create("entry")) shouldBe URI.create("jar:s3://bucket/key!/entry")
+  }
+  it should "throw exception for relative resource URI" in {
+    a [IllegalArgumentException] should be thrownBy {
+      Utils.createJarUri(URI.create("/bucket/key"), URI.create("entry"))
+    }
+  }
+  it should "throw exception for absolute path URI" in {
+    a [IllegalArgumentException] should be thrownBy {
+      Utils.createJarUri(URI.create("s3://bucket/key"), URI.create("s3://bucket/entry"))
+    }
+  }
+
+  it should "throw exception for null path in path URI" in {
+    a [IllegalArgumentException] should be thrownBy {
+      Utils.createJarUri(URI.create("s3://bucket/key"), URI.create("s3://bucket"))
+    }
+  }
+
   "unzip" should "extract all files" in {
     val zip = new File(getClass.getResource("/test.zip").toURI)
     Utils.unzip(zip, tempDir)
