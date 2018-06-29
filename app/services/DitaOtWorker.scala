@@ -33,25 +33,14 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
         try {
           val start = System.currentTimeMillis()
 
-          val inputFile = work.input.getScheme match {
-            case "jar" => {
-              val (zip, path) = Utils.parse(work.input)
-              val zipFile = new File(zip)
-              val inputDir = work.temp.resolve("input").toFile
-              Utils.unzip(zipFile, inputDir)
-              new File(inputDir.toURI.resolve(path.getPath))
-            }
-            case "file" => new File(work.input)
-            case _ => throw new IllegalArgumentException(s"Unsupported input URI scheme: ${work.input}")
-          }
+          val inputFile = getInputFile(work)
           val outputDir = work.temp.resolve("output").toFile
 
           logger.info(s"Running DITA-OT: " + work)
           val processor = getProcessor(work, inputFile, outputDir)
           processor.run()
 
-          val outputFile = work.temp.resolve(s"${work.task.id}.zip").toFile
-          Utils.zipDir(outputDir, outputFile)
+          val outputFile = getOutputFile(work, outputDir)
 
           val end = System.currentTimeMillis()
           logger.info(s"Process took ${format(end - start)}")
@@ -77,6 +66,24 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
       }
       case f => f
     }
+  }
+
+  private def getInputFile(work: Work): File = work.input.getScheme match {
+    case "jar" => {
+      val (zip, path) = Utils.parse(work.input)
+      val zipFile = new File(zip)
+      val inputDir = work.temp.resolve("input").toFile
+      Utils.unzip(zipFile, inputDir)
+      new File(inputDir.toURI.resolve(path.getPath))
+    }
+    case "file" => new File(work.input)
+    case _ => throw new IllegalArgumentException(s"Unsupported input URI scheme: ${work.input}")
+  }
+
+  private def getOutputFile(work: Work, outputDir: File): File = {
+    val outputFile = work.temp.resolve(s"${work.task.id}.zip").toFile
+    Utils.zipDir(outputDir, outputFile)
+    outputFile
   }
 
   private def getProcessor(work: Work, inputFile: File, outputDir: File): Processor = {
