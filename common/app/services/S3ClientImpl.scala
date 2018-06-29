@@ -8,7 +8,7 @@ import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 import com.amazonaws.{AmazonClientException, AmazonServiceException}
 import com.amazonaws.regions.{Region, Regions}
 import com.amazonaws.services.s3.model.{GetObjectRequest, PutObjectRequest}
-import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client}
+import com.amazonaws.services.s3.{AmazonS3, AmazonS3Client, AmazonS3URI}
 import javax.inject.Inject
 import models.Work
 import play.api.{Configuration, Logger}
@@ -26,7 +26,9 @@ class S3ClientImpl @Inject()(configuration: Configuration) extends S3Client {
 
 
   override def download(input: URI, dir: Path): Try[Path] = {
-    val (bucket, key) = S3Utils.parse(input)
+    val s3Uri = new AmazonS3URI(input)
+    val bucket = s3Uri.getBucket
+    val key = s3Uri.getKey
     val file = key.split("/").last
     val tempInputFile = Paths.get(dir.toString, "input", file)
     if (!Files.exists(tempInputFile.getParent)) {
@@ -62,7 +64,9 @@ class S3ClientImpl @Inject()(configuration: Configuration) extends S3Client {
   }
 
   override def upload(src: Path, output: URI): Try[Unit] = {
-    val (bucket, key) = S3Utils.parse(output)
+    val s3Uri = new AmazonS3URI(output)
+    val bucket = s3Uri.getBucket
+    val key = s3Uri.getKey
     try {
       logger.info(s"Upload ${src} to ${output}")
       val req = new PutObjectRequest(bucket, key, src.toFile)
