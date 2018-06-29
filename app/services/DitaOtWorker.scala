@@ -1,7 +1,6 @@
 package services
 
 import java.io.File
-import java.nio.file.Paths
 
 import javax.inject.Inject
 import models.{StatusString, Work}
@@ -11,6 +10,7 @@ import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services.Utils.format
 
+import scala.collection.JavaConversions._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -79,16 +79,17 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
     }
   }
 
-  private def getProcessor(task: Work, inputFile: File, outputDir: File): Processor = {
+  private def getProcessor(work: Work, inputFile: File, outputDir: File): Processor = {
     val processorFactory = ProcessorFactory.newInstance(ditaDir)
-    val tempDir = task.temp.resolve("tmp").toFile
+    val tempDir = work.temp.resolve("tmp").toFile
     processorFactory.setBaseTempDir(tempDir)
 
-    val processor = processorFactory.newProcessor(task.task.transtype)
+    val processor = processorFactory.newProcessor(work.task.transtype)
     //    logger.info(s"Message count: ${cacheListener.messages.size} -> ${cacheListener.messages}")
     //    assert(cacheListener.messages.isEmpty)
     cacheListener.messages.clear()
     processor.setLogger(cacheListener)
+    processor.setProperties(work.task.params)
     processor.setInput(inputFile)
     processor.setOutputDir(outputDir)
     processor.setProperty("clean.temp", "false")
