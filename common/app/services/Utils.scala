@@ -98,11 +98,14 @@ object Utils {
     * @return tuple of resource URI and file path
     */
   def parse(input: URI): (URI, URI) = {
-    if (input.getScheme != "jar") {
+    val scheme = "jar"
+    val separator = "!/"
+
+    if (input.getScheme != scheme) {
       throw new IllegalArgumentException(s"Incorrect JAR URI scheme: ${input}")
     }
     val ssp = input.getSchemeSpecificPart
-    ssp.indexOf('!') match {
+    ssp.indexOf(separator) match {
       case i if i != -1 => (new URI(ssp.substring(0, i)), new URI(ssp.substring(i + 2)))
       case _ => throw new IllegalArgumentException(s"Invalid JAR URI: ${input}")
     }
