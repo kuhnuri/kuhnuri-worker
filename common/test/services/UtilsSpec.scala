@@ -49,6 +49,12 @@ class UtilsSpec extends FlatSpec with Matchers with BeforeAndAfter {
     new File(tempDir, "dir" + File.separator + "file.txt").isFile shouldBe true
   }
 
+  "format" should "render duration" in {
+    Utils.format(1) shouldBe "0.1 ms"
+    Utils.format(1000) shouldBe "1.0 ms"
+    Utils.format(1000000) shouldBe "1000.0 ms"
+  }
+
   after {
     Utils.delete(tempDir)
   }
