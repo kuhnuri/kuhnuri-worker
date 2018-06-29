@@ -36,7 +36,7 @@ class CacheListener extends MarkerIgnoringBase {
 
   override def error(msg: String, t: Throwable): Unit = throw new UnsupportedOperationException
 
-  override def debug(msg: String): Unit = ()//messages += Debug(msg)
+  override def debug(msg: String): Unit = () //messages += Debug(msg)
 
   override def debug(format: String, arg: scala.Any): Unit = throw new UnsupportedOperationException
 
@@ -48,7 +48,7 @@ class CacheListener extends MarkerIgnoringBase {
 
   override def isWarnEnabled: Boolean = throw new UnsupportedOperationException
 
-  override def trace(msg: String): Unit = ()// messages += Debug(msg)
+  override def trace(msg: String): Unit = () // messages += Debug(msg)
 
   override def trace(format: String, arg: scala.Any): Unit = throw new UnsupportedOperationException
 
@@ -58,7 +58,7 @@ class CacheListener extends MarkerIgnoringBase {
 
   override def trace(msg: String, t: Throwable): Unit = throw new UnsupportedOperationException
 
-  override def info(msg: String): Unit = ()//messages += Info(msg)
+  override def info(msg: String): Unit = () //messages += Info(msg)
 
   override def info(format: String, arg: scala.Any): Unit = throw new UnsupportedOperationException
 
