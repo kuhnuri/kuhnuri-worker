@@ -4,6 +4,7 @@ import java.io.File
 import java.net.URI
 import java.nio.file.{Files, Paths}
 
+import com.amazonaws.util.IOUtils
 import javax.inject.Inject
 import models.{Task, Work}
 import play.Environment
@@ -32,7 +33,7 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         src <- download(job)
         otRes <- transform(src)
         res <- upload(otRes)
-        // TODO: Clean up
+        tidy <- cleanUp(res)
       } yield res
     }
     case Failure(e) => Future(Failure(e))
@@ -162,6 +163,26 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
         }
         case f => f
       }
+    }
+  }
+
+  /**
+    * Clean temporary files
+    */
+  private def cleanUp(tryTask: Try[Work]): Future[Try[Work]] = {
+    Future {
+      logger.info("Clean up")
+      try {
+        tryTask match {
+          case Success(work) => {
+            Utils.delete(work.temp.toFile)
+          }
+          case Failure(_) => // FIXME we need to retain temp dir info in failure case
+        }
+      } catch {
+        case e: Exception => logger.error(s"Failed to clean up: ${e.getMessage}", e)
+      }
+      tryTask
     }
   }
 

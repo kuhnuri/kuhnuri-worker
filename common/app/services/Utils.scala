@@ -112,6 +112,19 @@ object Utils {
 
   }
 
+  /**
+    * Recursively delete file or directory
+    */
+  def delete(tempDir: File): Unit = {
+    def deleteWalker(file: File): Unit = {
+      if (file.isDirectory) {
+        file.listFiles.foreach(deleteWalker(_))
+      }
+      file.delete()
+    }
+    deleteWalker(tempDir)
+  }
+
   def format(l: Long): String = "" + (l / 1000) + "." + (l % 1000) + " ms"
 
 }

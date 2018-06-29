@@ -50,12 +50,6 @@ class UtilsSpec extends FlatSpec with Matchers with BeforeAndAfter {
   }
 
   after {
-    def deleteWalker(file: File): Unit = {
-      if (file.isDirectory) {
-        file.listFiles.foreach(deleteWalker(_))
-      }
-      file.delete()
-    }
-    deleteWalker(tempDir)
+    Utils.delete(tempDir)
   }
 }
