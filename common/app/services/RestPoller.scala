@@ -1,6 +1,6 @@
 package services
 
-import java.net.{ConnectException, URI, UnknownHostException}
+import java.net.{ConnectException, SocketException, URI, UnknownHostException}
 import java.util.concurrent.TimeoutException
 
 import filters.TokenAuthorizationFilter
@@ -166,7 +166,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             }
           }
           .recover {
-            case e@(_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
+            case e@(_: UnknownHostException | _: ConnectException | _: TimeoutException | _: SocketException) =>
               Failure(new UnavailableException(s"Failed to submit: ${e.getMessage}", Some(e)))
             case e: Exception => {
               Failure(new Exception(s"Failed to request: ${e.getMessage}", e))
