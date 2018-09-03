@@ -71,6 +71,8 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             // FIXME: don't throw, return Failure
             case UNAUTHORIZED =>
               TokenAuthorizationFilter.authToken = Option.empty
+              logger.error(s"Unatuhorized register")
+              // XXX This should not throw an exception
               Failure(new UnauthorizedException(s"Unauthorized, login: ${response.status}"))
             case code =>
               Failure(new UnavailableException(s"Unsupported response $code", Option.empty))
@@ -101,6 +103,8 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
                 ()
               case UNAUTHORIZED =>
                 TokenAuthorizationFilter.authToken = Option.empty
+                logger.error(s"Unauthorized unregister")
+                // XXX This should not throw exception
                 throw new IllegalArgumentException(s"Unauthorized, login: ${response.status}")
               case code =>
                 throw new IllegalArgumentException(
@@ -110,6 +114,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
           }
       }
       case Failure(e) => {
+        logger.error(s"Failed to unregister: ${e.getMessage}", e)
         Future(Failure(e))
       }
     }
@@ -175,6 +180,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         res
       }
       case Failure(e) => {
+        logger.error(s"Failed to get work: ${e.getMessage}", e)
         Future(Failure(e))
       }
     }
@@ -239,6 +245,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             }
         }
         case Failure(e) => {
+          logger.error(s"Failed to submit job: ${e.getMessage}", e)
           Future(Failure(e))
         }
       }
