@@ -71,15 +71,17 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
             // FIXME: don't throw, return Failure
             case UNAUTHORIZED =>
               TokenAuthorizationFilter.authToken = Option.empty
-              logger.error(s"Unatuhorized register")
+              logger.error(s"Unauthorized register")
               // XXX This should not throw an exception
               Failure(new UnauthorizedException(s"Unauthorized, login: ${response.status}"))
             case code =>
+              logger.error(s"Unexpected queue response ${code}")
               Failure(new UnavailableException(s"Unsupported response $code", Option.empty))
           }
         }
         .recover {
           case e@(_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
+            logger.error(s"Failed to react queue at $registerUrl: ${e.getMessage}", e)
             Failure(new UnavailableException("Registration unavailable after timeout", Some(e)))
           case e: Exception =>
             // FIXME: don't throw, return Failure
