@@ -1,9 +1,0 @@
-version: '3'
-services:
-  worker:
-    image: "jelovirt/kuhnuri_worker:latest"
-    build: .
-    ports:
-      - 9002:9000
-    environment:
-      APPLICATION_SECRET: "j`1L]T7whPk<@2Q:/TLvI^`qKiK^ZL6zyza5lz9yQY>ifmsE8/?II:]?16dTp24:"
