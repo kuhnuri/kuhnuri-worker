@@ -5,7 +5,7 @@ for i in lib/*.jar; do
     CLASSPATH=$CLASSPATH:$i
 done
 export DITA_HOME=$PWD
-source /opt/app/config/env.sh
+. /opt/app/config/env.sh
 
 if [ -f /opt/app/RUNNING_PID ]; then
     rm /opt/app/RUNNING_PID
