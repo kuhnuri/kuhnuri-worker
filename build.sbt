@@ -30,11 +30,11 @@ stage := {
   val log = streams.value.log
 
   val stageDir = stage.value
-  val ditaOtVersion = System.getProperty("dita-ot.version", "3.1")
+  val ditaOtVersion = System.getProperty("dita-ot.version", "3.1.2")
   log.info(s"DITA-OT version: $ditaOtVersion")
 
   val ditaOtDir = baseDirectory.value / "target" / "universal" / "tmp" / "dita-ot"
-  val ignoreLibs = List("logback-classic", "logback-core") //, "commons-logging", "dost.jar", "dost-configuration.jar", "fop", "ant.jar", "ant-launcher.jar", "ant-apache-resolver", "xep", "xercesImpl", "xml-apis", "xml-resolver", "xmlgraphics-commons")
+  //val ignoreLibs = List("logback-classic", "logback-core") //, "commons-logging", "dost.jar", "dost-configuration.jar", "fop", "ant.jar", "ant-launcher.jar", "ant-apache-resolver", "xep", "xercesImpl", "xml-apis", "xml-resolver", "xmlgraphics-commons")
   if (Files.notExists(ditaOtDir.toPath)) {
     log.info("Downloading...")
     IO.unzipURL(new URL(s"https://github.com/dita-ot/dita-ot/releases/download/$ditaOtVersion/dita-ot-$ditaOtVersion.zip"), ditaOtDir)
@@ -46,10 +46,10 @@ stage := {
     // remove because Play already has conf/logback.xml
     IO.delete(stageDir / "config" / "logback.xml")
     // remove duplicate or unneccessary jars
-    (stageDir / "lib").list
-      .filter(_.endsWith(".jar"))
-      .filter(file => ignoreLibs.exists(ignore => file.contains(ignore)))
-      .foreach(file => IO.delete(stageDir / "lib" / file))
+//    (stageDir / "lib").list
+//      .filter(_.endsWith(".jar"))
+//      .filter(file => ignoreLibs.exists(ignore => file.contains(ignore)))
+//      .foreach(file => IO.delete(stageDir / "lib" / file))
     if (!System.getProperty("os.name").toLowerCase().contains("win")) {
       s"chmod 755 ${stageDir / "bin" / "dita" getAbsolutePath}" !
     }
