@@ -21,7 +21,7 @@ class DitaOtTranstypesConf @Inject()(configuration: Configuration) extends Trans
         case _ =>
       }
     }
-    val transtypes = configuration.get[Seq[String]]("worker.transtypes")
+    val transtypes: Seq[String] = Option(configuration.get[Seq[String]]("worker.transtypes")).getOrElse(available)
     transtypes
       .find(transtype => !available.contains(transtype))
       .foreach(
