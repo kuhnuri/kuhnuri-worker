@@ -11,7 +11,7 @@ lazy val root = (project in file("."))
 
 lazy val common = project
 
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.6"
 
 libraryDependencies += ehcache
 libraryDependencies += ws
@@ -28,6 +28,8 @@ publishArtifact in(Compile, packageDoc) := false
 
 stage := {
   import java.nio.file._
+  import scala.sys.process._
+  
   val log = streams.value.log
 
   val stageDir = stage.value

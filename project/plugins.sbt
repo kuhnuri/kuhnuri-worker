@@ -1,7 +1,7 @@
 resolvers += Resolver.mavenLocal
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.11")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.19")
 
 // web plugins
 
@@ -13,10 +13,10 @@ addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.11")
 
 //addSbtPlugin("com.typesafe.sbt" % "sbt-rjs" % "1.0.8")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.1")
+addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
 
 //addSbtPlugin("com.typesafe.sbt" % "sbt-mocha" % "1.1.0")
 
 //addSbtPlugin("org.irundaia.sbt" % "sbt-sassify" % "1.4.6")
 
-libraryDependencies += "org.dita-ot" % "dost" % "3.0"
+libraryDependencies += "org.dita-ot" % "dost" % "3.1"
