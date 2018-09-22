@@ -81,7 +81,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         }
         .recover {
           case e@(_: UnknownHostException | _: ConnectException | _: TimeoutException) =>
-            logger.error(s"Failed to react queue at $registerUrl: ${e.getMessage}", e)
+            logger.debug(s"Failed to reach queue at $registerUrl: ${e.getMessage}", e)
             Failure(new UnavailableException("Registration unavailable after timeout", Some(e)))
           case e: Exception =>
             // FIXME: don't throw, return Failure

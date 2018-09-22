@@ -7,7 +7,7 @@ class TranstypesConfImpl @Inject()(configuration: Configuration) extends Transty
 
   override def get: Set[String] = {
     configuration
-      .get[Seq[String]]("worker.transtypes")
+      .getOptional[Seq[String]]("worker.transtypes").getOrElse(Seq.empty)
       .toSet
   }
 
