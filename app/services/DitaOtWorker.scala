@@ -10,7 +10,7 @@ import play.api.Configuration
 import play.api.libs.ws.WSClient
 import services.Utils.format
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -96,7 +96,7 @@ class DitaOtWorker @Inject()(implicit context: ExecutionContext,
     //    assert(cacheListener.messages.isEmpty)
     cacheListener.messages.clear()
     processor.setLogger(cacheListener)
-    processor.setProperties(work.task.params)
+    processor.setProperties(work.task.params.asJava)
     processor.setInput(inputFile)
     processor.setOutputDir(outputDir)
     processor.setProperty("clean.temp", "false")

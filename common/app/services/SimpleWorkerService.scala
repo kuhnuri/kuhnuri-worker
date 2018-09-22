@@ -71,7 +71,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
         cleanup()
       case _ => ()
     }
-    nf.onFailure {
+    nf.failed.foreach {
       case e: java.lang.Error =>
         logger.error("infinite loop failure: " + e.getMessage, e)
       case e: Throwable =>
@@ -100,7 +100,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
     //      case Failure(t) => t.printStackTrace(); logger.error(s"Failure in loopTask $t")
     //      case _ => ()
     //    }
-    f.onFailure {
+    f.failed.foreach {
       case e: java.lang.Error =>
         logger.error("loopTask failure: " + e.getMessage, e)
       case e: Throwable =>
@@ -135,7 +135,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
         submitRes <- poller.submitResults(res)
         clean <- stateService.cleanJob(submitRes)
       } yield clean
-      f.onSuccess {
+      f.foreach {
         case Failure(UnavailableException(msg, cause)) => {
           logger.debug("Queue unavailable, wait and retry: " + msg);
           Thread.sleep(5000)
@@ -155,7 +155,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
           ()
         }
       }
-      f.onFailure {
+      f.failed.foreach {
         case e: java.lang.Error => {
           //          logger.error("Got error and will re-throw: " + e.getMessage)
           //          e.printStackTrace()
