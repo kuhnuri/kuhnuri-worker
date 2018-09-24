@@ -2,7 +2,7 @@ package services
 
 import java.io.File
 import java.net.URI
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 
 import javax.inject.Inject
 import models.{Task, Work}
@@ -126,6 +126,17 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
           //            if (output != work.output) {
           //              throw new IllegalArgumentException(s"Output directory ${work.output} should match ${output}")
           //            }
+          Success(work)
+        }
+        case "file" if output.getPath.endsWith("/") => {
+          val src: Path = Paths.get(work.output)
+          val dstDir = Paths.get(output)
+          val dst: Path = dstDir.resolve(src.getFileName.toString)
+          if (!Files.exists(dstDir)) {
+            Files.createDirectories(dstDir)
+          }
+          logger.info(s"Copy ${src} to ${dst}")
+          Files.copy(src, dst)
           Success(work)
         }
         case "s3" => {
