@@ -8,7 +8,9 @@ PLAY_OPTS="-Duser.dir=/opt/app"
 if [ ! -z "$ENVIRONMENT" ]; then
     PLAY_OPTS="$PLAY_OPTS -Dconfig.file=conf/$ENVIRONMENT.conf"
 fi
-export DITA_HOME=$PWD
+if [ ! -z "$APPLICATION_SECRET" ]; then
+    PLAY_OPTS="$PLAY_OPTS -Dplay.http.secret.key=$APPLICATION_SECRET"
+fi
 . /opt/app/config/env.sh
 if [ -f /opt/app/RUNNING_PID ]; then
     rm /opt/app/RUNNING_PID
