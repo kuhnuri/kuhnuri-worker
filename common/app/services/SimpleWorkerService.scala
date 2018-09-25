@@ -154,6 +154,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
           logger.error("Failure: " + e.getMessage, e);
           ()
         }
+        case _ => ()
       }
       f.failed.foreach {
         case e: java.lang.Error => {

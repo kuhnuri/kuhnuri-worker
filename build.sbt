@@ -26,6 +26,7 @@ sources in(Compile, doc) := Seq.empty
 
 publishArtifact in(Compile, packageDoc) := false
 
+/*
 stage := {
   import java.nio.file._
   import scala.sys.process._
@@ -126,3 +127,4 @@ dist := {
   IO.zip(entries, distFile)
   distFile
 }
+*/
