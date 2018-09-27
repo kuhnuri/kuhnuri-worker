@@ -21,7 +21,7 @@ class JsonStateService @Inject()(implicit context: ExecutionContext,
 
   private val logger = Logger(this.getClass)
 
-  private val baseTemp = new File(configuration.get[String]("worker.temp"))
+  private val baseTemp = new File(configuration.get[String]("worker.data"))
   private val stateFile = baseTemp.toPath.resolve(Paths.get("state.json"))
   if (!Files.exists(stateFile.getParent)) {
     Files.createDirectories(stateFile.getParent);
