@@ -52,11 +52,10 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
       }
       .getOrElse(Future.successful(()))
   }
-  worker.addStopHook { () => {
+  worker.addStopHook { () =>
     val promise = Promise[Unit]()
     promise.success(())
     shutdownPromise = Some(promise)
-  }
   }
 
   logger.info("Start processing loop")
