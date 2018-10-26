@@ -1,10 +1,8 @@
-Kuhnuri Worker
-==============
+# Kuhnuri Worker
 
 DITA-OT Worker that communicates with a Queue over REST.
 
-Process
--------
+## Process
 
 The Worker has a single loop where
 
@@ -21,42 +19,39 @@ If Queue has no work available, the process is
 2.  Queue returns a no work
 3.  Worker takes a nap
 
-Source and results support
---------------------------
+## Source and results support
 
 The following URI schemes are supported for source content:
 
--   file
--   jar
+  - file
+  - jar
 
 The following URI schemes are supported for result content:
 
--   file
--   jar
+  - file
+  - jar
 
-Building
---------
+## Building
 
 Compile the code:
 
 1.  `sbt compile`
 
-Develoment
-----------
+## Develoment
 
 Running a development version:
 
 1.  `sbt run`
 
-Running in Docker
------------------
+## Running in Docker
 
 The following volumes are used:
 
--   `/opt/workspace`: Temporary files directory
+  - `/var/log/app`: Logs directory
+  - `/tmp/app`: Temporary file directory
+  - `/var/lib/app`: State file directory
 
-Deploying
----------
+## Deploying
 
 Build a distribution package:
 
