@@ -9,7 +9,7 @@ COPY docker/run.sh /opt/app/run.sh
 RUN chmod 755 /opt/app/run.sh
 
 EXPOSE 9000
-VOLUME ["/opt/workspace", "/var/log/app", "/tmp/app", "/var/lib/app"]
+VOLUME ["/var/log/app", "/tmp/app", "/var/lib/app"]
 
 WORKDIR /opt/app
 ENTRYPOINT ["./run.sh"]
