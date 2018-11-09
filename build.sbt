@@ -13,6 +13,8 @@ lazy val common = project
 
 scalaVersion := "2.12.6"
 
+resolvers += Resolver.jcenterRepo
+
 libraryDependencies += ehcache
 libraryDependencies += ws
 libraryDependencies += filters
