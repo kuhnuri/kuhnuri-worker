@@ -2,7 +2,7 @@ package services
 
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
-import models.{ConversionStatus, Task, Work}
+import models.{ConversionStatus, StatusString, Task, Work}
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Logger}
 
@@ -24,6 +24,8 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
   extends WorkerService {
 
   private val logger = Logger(this.getClass)
+
+  private val restart = configuration.get[Boolean]("worker.restart")
 
   /** Promise of application shutdown. */
   var shutdownPromise: Option[Promise[Unit]] = None
@@ -114,7 +116,11 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
         oldTask
           .map { t: Task =>
             logger.info("Using old job")
-            Future(Success(t))
+            if (restart) {
+              Future(Success(t))
+            } else {
+              Future(Failure(new ProcessorException(new Exception("Unexpected worker shutdown"), t.copy(status = StatusString.Error))))
+            }
           }
           .getOrElse(poller.getWork())
       }
