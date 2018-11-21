@@ -1,5 +1,5 @@
 version: '3'
 services:
   worker:
-    image: "jelovirt/kuhnuri_worker:latest"
+    image: "jelovirt/kuhnuri_worker:3.2"
     build: .
