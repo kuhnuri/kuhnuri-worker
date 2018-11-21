@@ -56,7 +56,7 @@
   <!--logger name="org.jooq" level="INFO" /-->
 
   <root level="WARN">
-    <appender-ref ref="ASYNCFILE" />
+    <!--appender-ref ref="ASYNCFILE" /-->
     <appender-ref ref="ASYNCSTDOUT" />
   </root>
 
