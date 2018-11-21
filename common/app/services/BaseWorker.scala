@@ -118,7 +118,7 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
   /**
     * Upload temporary resource into output
     */
-  def upload(tryTask: Try[Work]): Future[Try[Work]] = {
+  def upload(tryWork: Try[Work]): Future[Try[Work]] = {
     def uploadResource(work: Work, output: URI): Try[Work] = {
       output.getScheme match {
         case "file" if !output.getPath.endsWith("/") => {
@@ -154,8 +154,8 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
     }
 
     Future {
-      logger.debug(s"Upload: " + tryTask)
-      tryTask match {
+      logger.debug(s"Upload: " + tryWork)
+      tryWork match {
         case Success(work) => try {
           work.task.output match {
             case Some(taskOutput) => {

@@ -144,7 +144,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
                 response.json
                   .validate[Task]
                   .map {
-                    case job => Future(Success(job))
+                    case task => Future(Success(task))
                   }
                   .recoverTotal { e =>
                     Future(
@@ -192,8 +192,8 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
     val f = res match {
       case Success(task) =>
         submitJob(task.task.copy(status = StatusString.Done), res)
-      case Failure(ProcessorException(_, job)) =>
-        submitJob(job.copy(status = StatusString.Error), res)
+      case Failure(ProcessorException(_, task)) =>
+        submitJob(task.copy(status = StatusString.Error), res)
       case f@Failure(NoWorkException()) =>
         Future(f)
       case f@Failure(UnauthorizedException(_)) =>
@@ -209,7 +209,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
     f
   }
 
-  private def submitJob(job: Task, res: Try[Work]): Future[Try[Work]] = {
+  private def submitJob(task: Task, res: Try[Work]): Future[Try[Work]] = {
     getToken()
       .flatMap {
         case Success(token) => {
@@ -217,7 +217,7 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
           // FIXME
           val log = List() //cacheListener.messages.map(_.msg.toString)
           //        cacheListener.messages.clear()
-          val otRes: JobResult = JobResult(job, log)
+          val otRes: JobResult = JobResult(task, log)
 
           val request: WSRequest = ws.url(submitUrl)
           val complexRequest: WSRequest = request

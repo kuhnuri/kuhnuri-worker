@@ -63,11 +63,11 @@ class JsonStateService @Inject()(implicit context: ExecutionContext,
 
   def persist(src: Try[Task]): Future[Try[Task]] = Future {
     src match {
-      case Success(job) => {
+      case Success(task) => {
         logger.debug("Writing " + stateFile)
         val out = Files.newBufferedWriter(stateFile, UTF_8, CREATE)
         try {
-          out.write(Json.toJson(job).toString())
+          out.write(Json.toJson(task).toString())
           src
         } catch {
           case e: IOException => {
