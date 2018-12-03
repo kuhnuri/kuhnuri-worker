@@ -29,21 +29,21 @@
   <logger name="application" level="DEBUG"/>
 
   <!-- Worker -->
-  <logger name="services.BaseWorker" level="INFO">
+  <logger name="services.BaseWorker" level="DEBUG">
     <!--<appender-ref ref="ASYNCFILE" />-->
   </logger>
-  <logger name="services.DitaOtWorker" level="INFO">
+  <logger name="services.DitaOtWorker" level="DEBUG">
     <!--<appender-ref ref="ASYNCFILE" />-->
   </logger>
-  <logger name="services.RestPoller" level="INFO">
+  <logger name="services.RestPoller" level="DEBUG">
     <!--<appender-ref ref="ASYNCFILE" />-->
   </logger>
-  <logger name="services.SimpleWorkerService" level="INFO">
+  <logger name="services.SimpleWorkerService" level="DEBUG">
     <!--<appender-ref ref="ASYNCFILE" />-->
   </logger>
 
   <!-- DITA-OT-->
-  <logger name="FOP" level="INFO"/>
+  <logger name="FOP" level="DEBUG"/>
   <logger name="org.apache.fop" level="INFO"/>
   <logger name="org.apache.fop.apps.FopConfParser" level="WARN"/>
   <logger name="org.apache.xmlgraphics" level="INFO"/>
@@ -55,7 +55,7 @@
   <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
   <!--logger name="org.jooq" level="INFO" /-->
 
-  <root level="INFO">
+  <root level="DEBUG">
     <!--appender-ref ref="ASYNCFILE" /-->
     <appender-ref ref="ASYNCSTDOUT" />
   </root>
