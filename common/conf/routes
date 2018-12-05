@@ -7,6 +7,8 @@
 # An example controller showing how to write asynchronous code
 #GET            /message               controllers.AsyncController.message
 
+GET        /health               controllers.HomeController.health
+
 GET        /api/v1/status        controllers.v1.WorkerController.status
 GET        /api/v1/log           controllers.v1.WorkerController.log(offset: Int = 0)
 
