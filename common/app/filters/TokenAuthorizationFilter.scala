@@ -18,10 +18,11 @@ class TokenAuthorizationFilter @Inject()(
 
   override def apply(nextFilter: RequestHeader => Future[Result])
                     (requestHeader: RequestHeader): Future[Result] = {
-    (requestHeader.headers.get(AUTH_TOKEN_HEADER), authToken) match {
-      case (Some(token), Some(at)) if token == at => nextFilter(requestHeader)
-      case (Some(_), _) => logger.info("Unrecognized API token"); Future(Results.Unauthorized)
-      case (None, _) => logger.info("Missing API token"); Future(Results.Unauthorized)
+    (requestHeader.path, requestHeader.headers.get(AUTH_TOKEN_HEADER), authToken) match {
+      case ("/health", _, _) => nextFilter(requestHeader)
+      case (_, Some(token), Some(at)) if token == at => nextFilter(requestHeader)
+      case (_, Some(_), _) => logger.info("Unrecognized API token"); Future(Results.Unauthorized)
+      case (_, None, _) => logger.info("Missing API token"); Future(Results.Unauthorized)
     }
   }
 }
