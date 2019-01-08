@@ -5,6 +5,7 @@ import javax.inject.{Inject, Singleton}
 import models.{ConversionStatus, StatusString, Task, Work}
 import play.api.inject.ApplicationLifecycle
 import play.api.{Configuration, Logger}
+import org.slf4j.MDC
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future, Promise}
@@ -123,6 +124,12 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
             }
           }
           .getOrElse(poller.getWork())
+          .map { w: Try[Task] =>
+            w.foreach { task =>
+              MDC.put("id", task.id)
+            }
+            w
+          }
       }
   }
 
@@ -140,6 +147,7 @@ class SimpleWorkerService @Inject()(implicit context: ExecutionContext,
         submitRes <- poller.submitResults(res)
         clean <- stateService.cleanJob(submitRes)
       } yield clean
+      MDC.remove("id")
       f.foreach {
         case Failure(UnavailableException(msg, cause)) => {
           logger.debug("Queue unavailable, wait and retry: " + msg);
