@@ -29,11 +29,11 @@ class S3ClientImpl @Inject()(configuration: Configuration) extends S3Client {
     val key = s3Uri.getKey
     val file = key.split("/").last
     val tempInputFile = Paths.get(dir.toString, "input", file)
-    if (!Files.exists(tempInputFile.getParent)) {
-      Files.createDirectories(tempInputFile.getParent)
-    }
     //    val tempOutputFile = Paths.get(baseTemp.getAbsolutePath, "output", file)
     try {
+      if (!Files.exists(tempInputFile.getParent)) {
+        Files.createDirectories(tempInputFile.getParent)
+      }
       logger.info(s"Download ${input}")
       val req = new GetObjectRequest(bucket, key)
       val s3Object = s3.getObject(req)
@@ -57,6 +57,10 @@ class S3ClientImpl @Inject()(configuration: Configuration) extends S3Client {
         logger.error("Caught an AmazonClientException, which means the client encountered a serious internal problem while trying to communicate with S3, such as not being able to access the network.");
         logger.error("Error Message: " + ace.getMessage())
         Failure(ace)
+      }
+      case e: Exception => {
+        logger.error("Failed to download: " + e.getMessage())
+        Failure(e)
       }
     }
   }
@@ -84,6 +88,10 @@ class S3ClientImpl @Inject()(configuration: Configuration) extends S3Client {
         logger.error("Caught an AmazonClientException, which means the client encountered a serious internal problem while trying to communicate with S3, such as not being able to access the network.");
         logger.error("Error Message: " + ace.getMessage())
         Failure(ace)
+      }
+      case e: Exception => {
+        logger.error("Failed to upload: " + e.getMessage())
+        Failure(e)
       }
     }
   }
