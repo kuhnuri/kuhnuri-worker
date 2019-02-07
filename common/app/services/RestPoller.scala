@@ -200,8 +200,8 @@ class RestPoller @Inject()(implicit context: ExecutionContext,
         Future(f)
       case f@Failure(UnavailableException(_, _)) =>
         Future(f)
-      case _@t =>
-        throw new IllegalArgumentException("Unknown failure type: " + t.toString)
+      case _@Failure(t) =>
+        throw new IllegalArgumentException("Unknown failure type: " + t.toString, t)
     }
     //    f.onComplete {
     //      case _ => unlock()

@@ -73,7 +73,10 @@ abstract class BaseWorker @Inject()(implicit context: ExecutionContext,
                 task,
                 tempDir
               )
-            })
+            }) match {
+              case Failure(e) => Failure(new ProcessorException(e, task))
+              case res => res
+            }
         }
         case "jar" => {
           val (resource, path) = Utils.parse(input)
