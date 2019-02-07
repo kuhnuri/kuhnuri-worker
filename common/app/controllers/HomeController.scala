@@ -10,7 +10,7 @@ class HomeController @Inject()(cc: ControllerComponents) extends AbstractControl
   private val logger = Logger(this.getClass)
 
   def health = Action {
-    logger.info("Check health")
+    logger.debug("Check health")
     Ok("")
   }
 
