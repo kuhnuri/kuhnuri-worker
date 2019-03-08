@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+set -e
+
 CLASSPATH=conf/
 for i in lib/*.jar; do
     CLASSPATH=$CLASSPATH:$i
@@ -15,5 +17,8 @@ fi
 if [ -f /opt/app/RUNNING_PID ]; then
     rm /opt/app/RUNNING_PID
 fi
+
+echo "Environment variables:"
+env
 
 exec java $JAVA_OPTS $PLAY_OPTS -cp $CLASSPATH play.core.server.ProdServerStart
