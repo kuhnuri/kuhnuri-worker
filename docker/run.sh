@@ -1,7 +1,5 @@
 #!/usr/bin/env sh
 
-set -e
-
 CLASSPATH=conf/
 for i in lib/*.jar; do
     CLASSPATH=$CLASSPATH:$i
@@ -21,4 +19,8 @@ fi
 echo "Environment variables:"
 env
 
-exec java $JAVA_OPTS $PLAY_OPTS -cp $CLASSPATH play.core.server.ProdServerStart
+java $JAVA_OPTS $PLAY_OPTS -cp $CLASSPATH play.core.server.ProdServerStart
+
+STATUS=$?
+echo "Exit status: $STATUS"
+exit $STATUS
